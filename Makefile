@@ -1,4 +1,4 @@
-dbConnectionString := postgresql://postgres:admin@127.0.0.1:5435/timer?sslmode=disable
+dbConnectionString := postgresql://postgres:admin@127.0.0.1:5435/tennis?sslmode=disable
 
 .PHONY: ensure-migrate
 ensure-migrate: ## Ensure that the migrate binary is installed
