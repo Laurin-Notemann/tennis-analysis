@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 
 	"github.com/joho/godotenv"
@@ -25,4 +26,15 @@ func main() {
 
   log.Printf("env: %v\n", cfg.DB.Url)
 
+  dbCon, err := sql.Open("postgres", cfg.DB.Url)
+  if err != nil {
+    log.Fatal(err)
+  }
+
+  err = dbCon.Ping()
+  if err != nil {
+    log.Fatal(err)
+  }
+  
+  dbCon.Close()
 }
