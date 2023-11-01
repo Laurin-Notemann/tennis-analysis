@@ -15,6 +15,7 @@ sql:
         - "./db/queries/users.query.sql"
       schema:
        - "./db/migrations/000001_initial.up.sql"
+       - "./db/migrations/000002_remove-score-table.up.sql"
       gen:
         go:
             package: db

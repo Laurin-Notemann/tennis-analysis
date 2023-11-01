@@ -41,22 +41,13 @@ type Player struct {
 }
 
 type Point struct {
-	ID        uuid.UUID
-	Value     sql.NullInt32
-	TeamID    uuid.UUID
-	ScoreID   uuid.UUID
-	CreatedAt time.Time
-	UpdatedAt time.Time
-}
-
-type Score struct {
-	ID           uuid.UUID
-	ScoreOrder   sql.NullInt32
-	TeamOnePoint uuid.UUID
-	TeamTwoPoint uuid.UUID
-	GameID       uuid.UUID
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
+	ID          uuid.UUID
+	Value       sql.NullInt32
+	TeamID      uuid.UUID
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	GameID      uuid.UUID
+	PointsOrder sql.NullInt32
 }
 
 type Set struct {
