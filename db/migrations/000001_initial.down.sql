@@ -1,0 +1,15 @@
+DROP TABLE "users" CASCADE;
+
+DROP TABLE "players" CASCADE;
+
+DROP TABLE "teams" CASCADE;
+
+DROP TABLE "matches" CASCADE;
+
+DROP TABLE "sets" CASCADE;
+
+DROP TABLE "games" CASCADE;
+
+DROP TABLE "scores" CASCADE;
+
+DROP TABLE "points CASCADE;

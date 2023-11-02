@@ -1,0 +1,26 @@
+version: "2"
+overrides:
+  go:
+    overrides:
+      - db_type: "uuid"
+        nullable: true
+        engine: postgresql
+        go_type:
+          import: "github.com/gofrs/uuid"
+          package: "uuid"
+          type: "UUID"
+sql:
+    - engine: "postgresql"
+      queries:
+        - "./db/queries/users.query.sql"
+      schema:
+       - "./db/migrations/000001_initial.up.sql"
+       - "./db/migrations/000002_remove-score-table.up.sql"
+      gen:
+        go:
+            package: db
+            out: db
+            emit_interface: true
+
+
+
