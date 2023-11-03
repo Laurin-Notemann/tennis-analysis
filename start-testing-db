@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+docker compose up -d tennistestdb
+
+echo "Wait 2 seconds"
+sleep 2
