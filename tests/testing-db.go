@@ -23,8 +23,6 @@ func DbQueriesTest() *db.Queries {
 		log.Fatalf("can't parse config: %v", err)
 	}
 
-	log.Printf("env: %v\n", cfg.DB.Url)
-
 	dbCon, err := sql.Open("postgres", cfg.DB.TestUrl)
 	if err != nil {
 		log.Fatal(err)

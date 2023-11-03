@@ -37,9 +37,12 @@ some-trash:
 testDb := postgresql://postgres:admin@127.0.0.1:5436/tennistest?sslmode=disable
 .PHONY: test
 test: run-test-db
-	go test ./tests -v
-	@docker compose stop tennistestdb 2> /dev/null
-	@docker rm tennistestdb 2> /dev/null
+	@{ \
+	trap 'docker compose stop tennistestdb 2> /dev/null; docker rm tennistestdb 2> /dev/null; exit 1' ERR; \
+	go test ./tests -v; \
+	docker compose stop tennistestdb 2> /dev/null; \
+	docker rm tennistestdb 2> /dev/null; \
+	}
 
 .PHONY: run-test-db 
 run-test-db: ensure-migrate
