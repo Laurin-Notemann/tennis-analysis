@@ -8,7 +8,7 @@ import (
 	"github.com/Laurin-Notemann/tennis-analysis/handler"
 )
 
-func Test_CreateUser(t *testing.T) {
+func TestCreateUser(t *testing.T) {
 	newUser := db.CreateUserParams{
 		Username:     "laurin",
 		Email:        "laurin@test.de",
