@@ -13,7 +13,7 @@ SELECT *
 FROM users;
 
 -- name: GetUserById :one
-SELECT id, user, email 
+SELECT id, username, email 
 FROM users
 WHERE id = $1 
 LIMIT 1;

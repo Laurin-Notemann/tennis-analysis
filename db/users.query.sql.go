@@ -78,21 +78,21 @@ func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
 }
 
 const getUserById = `-- name: GetUserById :one
-SELECT id, user, email 
+SELECT id, username, email 
 FROM users
 WHERE id = $1 
 LIMIT 1
 `
 
 type GetUserByIdRow struct {
-	ID      uuid.UUID
-	Column2 interface{}
-	Email   string
+	ID       uuid.UUID
+	Username string
+	Email    string
 }
 
 func (q *Queries) GetUserById(ctx context.Context, id uuid.UUID) (GetUserByIdRow, error) {
 	row := q.db.QueryRowContext(ctx, getUserById, id)
 	var i GetUserByIdRow
-	err := row.Scan(&i.ID, &i.Column2, &i.Email)
+	err := row.Scan(&i.ID, &i.Username, &i.Email)
 	return i, err
 }

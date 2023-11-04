@@ -51,7 +51,7 @@ func (d *DBQueriesMock) GetUserById(ctx context.Context, id uuid.UUID) (db.GetUs
   
   user := db.GetUserByIdRow{
     ID: d.users[idx].ID,
-    Column2: "?",
+    Username: d.users[idx].Username,
     Email: d.users[idx].Email,
   }
   return user, nil
