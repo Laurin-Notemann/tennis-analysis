@@ -3,7 +3,6 @@ package tests
 import (
 	"context"
 	"database/sql"
-	"log"
 	"testing"
 
 	"github.com/Laurin-Notemann/tennis-analysis/db"
