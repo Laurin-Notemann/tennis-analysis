@@ -9,7 +9,9 @@ import (
 )
 
 func NewApi(ctx context.Context, resource handler.ResourceHandlers) *echo.Echo {
+  baseUrl := "/api"
 	userRouter := newUserRouter(resource.UserHandler)
+  authRouter := newAuthRouter(resource.UserHandler)
 
 	e := echo.New()
 
@@ -18,6 +20,8 @@ func NewApi(ctx context.Context, resource handler.ResourceHandlers) *echo.Echo {
 	e.Use(middleware.Recover())
 
 	RegisterUserRoute(e, *userRouter)
+	RegisterAuthRoute(baseUrl, e, *authRouter)
+  RegisterHtmlPageRoutes(e)
 
 	return e
 }
