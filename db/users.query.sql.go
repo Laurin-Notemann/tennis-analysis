@@ -7,6 +7,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 
 	uuid "github.com/gofrs/uuid"
 )
@@ -19,7 +20,7 @@ INSERT INTO users (
 ) VALUES (
   $1, $2, $3
 )
-RETURNING id, username, email, password_hash, created_at, updated_at
+RETURNING id, username, email, password_hash, created_at, updated_at, refresh_token
 `
 
 type CreateUserParams struct {
@@ -38,12 +39,34 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.PasswordHash,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.RefreshToken,
+	)
+	return i, err
+}
+
+const deleteUserById = `-- name: DeleteUserById :one
+DELETE FROM users
+WHERE id = $1 
+RETURNING id, username, email, password_hash, created_at, updated_at, refresh_token
+`
+
+func (q *Queries) DeleteUserById(ctx context.Context, id uuid.UUID) (User, error) {
+	row := q.db.QueryRowContext(ctx, deleteUserById, id)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Email,
+		&i.PasswordHash,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.RefreshToken,
 	)
 	return i, err
 }
 
 const getAllUsers = `-- name: GetAllUsers :many
-SELECT id, username, email, password_hash, created_at, updated_at 
+SELECT id, username, email, password_hash, created_at, updated_at, refresh_token 
 FROM users
 `
 
@@ -63,6 +86,7 @@ func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
 			&i.PasswordHash,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.RefreshToken,
 		); err != nil {
 			return nil, err
 		}
@@ -77,22 +101,109 @@ func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
 	return items, nil
 }
 
+const getUserByEmail = `-- name: GetUserByEmail :one
+SELECT id, username, email, password_hash, created_at, updated_at, refresh_token
+FROM users
+WHERE email = $1 
+LIMIT 1
+`
+
+func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserByEmail, email)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Email,
+		&i.PasswordHash,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.RefreshToken,
+	)
+	return i, err
+}
+
 const getUserById = `-- name: GetUserById :one
-SELECT id, user, email 
+SELECT id, username, email, password_hash, created_at, updated_at, refresh_token
 FROM users
 WHERE id = $1 
 LIMIT 1
 `
 
-type GetUserByIdRow struct {
-	ID      uuid.UUID
-	Column2 interface{}
-	Email   string
+func (q *Queries) GetUserById(ctx context.Context, id uuid.UUID) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserById, id)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Email,
+		&i.PasswordHash,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.RefreshToken,
+	)
+	return i, err
 }
 
-func (q *Queries) GetUserById(ctx context.Context, id uuid.UUID) (GetUserByIdRow, error) {
-	row := q.db.QueryRowContext(ctx, getUserById, id)
-	var i GetUserByIdRow
-	err := row.Scan(&i.ID, &i.Column2, &i.Email)
+const getUserByUsername = `-- name: GetUserByUsername :one
+SELECT id, username, email, password_hash, created_at, updated_at, refresh_token
+FROM users
+WHERE username = $1 
+LIMIT 1
+`
+
+func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserByUsername, username)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Email,
+		&i.PasswordHash,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.RefreshToken,
+	)
+	return i, err
+}
+
+const updateUserById = `-- name: UpdateUserById :one
+UPDATE users
+SET 
+  username = $1, 
+  email = $2,
+  password_hash= $3,
+  refresh_token = $4,
+  updated_at = Now()
+WHERE id = $5
+RETURNING id, username, email, password_hash, created_at, updated_at, refresh_token
+`
+
+type UpdateUserByIdParams struct {
+	Username     string
+	Email        string
+	PasswordHash string
+	RefreshToken sql.NullString
+	ID           uuid.UUID
+}
+
+func (q *Queries) UpdateUserById(ctx context.Context, arg UpdateUserByIdParams) (User, error) {
+	row := q.db.QueryRowContext(ctx, updateUserById,
+		arg.Username,
+		arg.Email,
+		arg.PasswordHash,
+		arg.RefreshToken,
+		arg.ID,
+	)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Email,
+		&i.PasswordHash,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.RefreshToken,
+	)
 	return i, err
 }

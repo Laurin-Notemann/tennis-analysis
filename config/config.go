@@ -6,4 +6,5 @@ type Config struct {
 
 type DBConfig struct {
   Url string `required:"true" split_words:"true"`
+  TestUrl string `required:"true" split_words:"true"` 
 }
