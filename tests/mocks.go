@@ -43,16 +43,69 @@ func (d *DBQueriesMock) GetAllUsers(ctx context.Context) ([]db.User, error) {
   return d.users, nil
 }
 
-func (d *DBQueriesMock) GetUserById(ctx context.Context, id uuid.UUID) (db.GetUserByIdRow, error) {
+func (d *DBQueriesMock) GetUserById(ctx context.Context, id uuid.UUID) (db.User, error) {
   idx := slices.IndexFunc(d.users, func(u db.User) bool {return u.ID == id})
   if idx == -1 {
-    return db.GetUserByIdRow{}, errors.New("No User found")
+    return db.User{}, errors.New("User not found")
   }
+  user := d.users[idx]
+  return user, nil
+}
+
+func (d *DBQueriesMock) GetUserByEmail(ctx context.Context, email string) (db.User, error) {
+  idx := slices.IndexFunc(d.users, func(u db.User) bool {return u.Email == email})
+  if idx == -1 {
+    return db.User{}, errors.New("User not found")
+  }
+  user := d.users[idx]
+  return user, nil
+}
+
+func (d *DBQueriesMock) GetUserByUsername(ctx context.Context, username string) (db.User, error) {
+  idx := slices.IndexFunc(d.users, func(u db.User) bool {return u.Username == username})
+  if idx == -1 {
+    return db.User{}, errors.New("User not found")
+  }
+  user := d.users[idx]
+  return user, nil
+}
+
+func (d *DBQueriesMock) DeleteUserById(ctx context.Context, id uuid.UUID) (db.User, error) {
+  user, err := d.GetUserById(ctx, id)
+  if err != nil {
+    return db.User{}, err
+  }
+
+  var tempUsers []db.User
   
-  user := db.GetUserByIdRow{
-    ID: d.users[idx].ID,
-    Username: d.users[idx].Username,
-    Email: d.users[idx].Email,
+  for _, item := range d.users {
+    if item.ID != id {
+      tempUsers = append(tempUsers, item)
+    }
   }
+
+  d.users = tempUsers
+
+  return user, nil
+}
+
+func (d *DBQueriesMock) UpdateUserById(ctx context.Context, args db.UpdateUserByIdParams) (db.User, error) {
+  id := args.ID
+  user, err := d.GetUserById(ctx, id)
+  if err != nil {
+    return db.User{}, err
+  }
+
+  user.Email = args.Email
+  user.Username = args.Username
+  user.PasswordHash = args.PasswordHash
+  user.RefreshToken = args.RefreshToken
+
+  for idx, item := range d.users {
+    if item.ID == id {
+      d.users[idx] = user
+    }
+  }
+
   return user, nil
 }

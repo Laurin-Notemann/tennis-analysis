@@ -39,7 +39,7 @@ testDb := postgresql://postgres:admin@127.0.0.1:5436/tennistest?sslmode=disable
 test: run-test-db
 	@{ \
 	trap 'docker compose stop tennistestdb 2> /dev/null; docker rm tennistestdb 2> /dev/null; exit 1' ERR; \
-	go test ./tests -v; \
+	go test ./tests -v -p 1; \
 	docker compose stop tennistestdb 2> /dev/null; \
 	docker rm tennistestdb 2> /dev/null; \
 	}
