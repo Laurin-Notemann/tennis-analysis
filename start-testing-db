@@ -4,3 +4,5 @@ docker compose up -d tennistestdb
 
 echo "Wait 2 seconds"
 sleep 2
+
+migrate -source file://db/migrations -database ${} up >> /dev/null

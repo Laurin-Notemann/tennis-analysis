@@ -26,11 +26,25 @@ test-migrate-down: ensure-migrate
 	migrate -source file://db/migrations -database ${dbConnectionString} down
 
 .PHONY: test-migrations
-test-migrations: ensure-migrate test-migrate-up test-migrate-down test-migrate-down
+test-migrations: ensure-migrate test-migrate-up test-migrate-down test-migrate-up
 
-.PHONY: some-trash
-some-trash:
-	@echo "Hello" >> /dev/null
+#######
+#Setup#
+#######
+.PHONY: start-dev-env
+start-dev-env: ensure-migrate
+	@docker compose up tennisdb -d  
+	@sleep 1
+	@migrate -source file://db/migrations -database ${dbConnectionString} up
+
+.PHONY: end-dev-env
+end-dev-env: 
+	@docker compose stop tennisdb
+	@docker rm tennisdb
+
+.PHONY: restart-dev-env
+restart-dev-env: ensure-migrate end-dev-env start-dev-env
+
 ######
 #Test#
 ######

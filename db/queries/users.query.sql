@@ -2,9 +2,10 @@
 INSERT INTO users (
   username,
   email,
-  password_hash
+  password_hash,
+  refresh_token
 ) VALUES (
-  $1, $2, $3
+  $1, $2, $3, $4
 )
 RETURNING *;
 
