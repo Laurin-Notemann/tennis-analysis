@@ -17,10 +17,25 @@ registerUserForm.addEventListener("submit", async e => {
   }
 
   const res = await fetch("/api/register", {
-    method: "POST", body: JSON.stringify(body), headers: {
+    method: "POST",
+    body: JSON.stringify(body),
+    headers: {
       "Content-Type": "application/json"
     }
   })
+  const userPayload = await res.json()
+  console.log(userPayload)
 
-  console.log(await res.json())
+  localStorage.setItem("access-token", userPayload.accessToken)
+  localStorage.setItem("refresh-token", userPayload.user.RefreshToken.String)
+
+  console.log(document.cookie)
 })
+
+function loadNavBar() {
+  const navBar = document.querySelector("nav")
+
+}
+
+loadNavBar()
+
