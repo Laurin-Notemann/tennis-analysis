@@ -56,30 +56,23 @@ func newAuthRouter(h handler.UserHandler) *AuthenticationRouter {
 
 func (r AuthenticationRouter) register(ctx echo.Context) (err error) {
 	newUser := new(RegisterInput)
-
 	if err = ctx.Bind(newUser); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	if newUser.Username == "" || newUser.Email == "" || newUser.Confirm == "" || newUser.Password == "" {
-		return echo.NewHTTPError(http.StatusBadRequest, "Missing inputs.")
-	}
-
-	if newUser.Password != newUser.Confirm {
-		return echo.NewHTTPError(http.StatusBadRequest, "Password and confirmation do not match.")
-	}
-
-	signedAccessToken, err := utils.GenerateNewJwtToken(newUser.Username, newUser.Email, oneDay, r.UserHandler.Env.JWT.AccessToken)
-	if err != nil {
-		return err
-	}
+	signedAccessToken, err := validateUserInputAndGetJwt(
+    *newUser, 
+    r.UserHandler.Env.JWT.AccessToken,
+  )
+  if err != nil {
+    return err
+  }
 
 	input := handler.CreateUserInput{
 		Username: newUser.Username,
 		Email:    newUser.Email,
 		Password: newUser.Password,
 	}
-
 	user, err := r.UserHandler.CreateUser(ctx.Request().Context(), input)
 	if err != nil {
 		return err
@@ -89,13 +82,11 @@ func (r AuthenticationRouter) register(ctx echo.Context) (err error) {
 		AccessToken: signedAccessToken,
 		User:        user,
 	}
-
 	return ctx.JSON(http.StatusCreated, registerPayload)
 }
 
 func (r AuthenticationRouter) refresh(ctx echo.Context) (err error) {
 	req := new(RefreshReq)
-
 	if err = ctx.Bind(req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
@@ -172,4 +163,21 @@ func RegisterAuthRoute(baseUrl string, e *echo.Echo, r AuthenticationRouter) {
 
 	e.POST(baseUrl+"/register", r.register)
 	e.POST(baseUrl+"/refresh", r.refresh)
+}
+
+func validateUserInputAndGetJwt(input RegisterInput, token string) (string, error) {
+	if input.Username == "" || input.Email == "" || input.Confirm == "" || input.Password == "" {
+		return "", echo.NewHTTPError(http.StatusBadRequest, "Missing inputs.")
+	}
+
+	if input.Password != input.Confirm {
+		return "", echo.NewHTTPError(http.StatusBadRequest, "Password and confirmation do not match.")
+	}
+
+	signedAccessToken, err := utils.GenerateNewJwtToken(input.Username, input.Email, oneDay, token)
+	if err != nil {
+		return "", err
+	}
+
+	return signedAccessToken, nil
 }
