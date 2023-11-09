@@ -9,13 +9,10 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
-	"golang.org/x/crypto/bcrypt"
 
-	"github.com/lib/pq"
-
-	"github.com/Laurin-Notemann/tennis-analysis/config"
 	"github.com/Laurin-Notemann/tennis-analysis/db"
 	"github.com/Laurin-Notemann/tennis-analysis/handler"
+	"github.com/Laurin-Notemann/tennis-analysis/utils"
 )
 
 type (
@@ -30,15 +27,8 @@ type (
 		Confirm  string `json:"confirm"`
 	}
 
-	CustomTokenClaim struct {
-		Username string `json:"username"`
-		Email    string `json:"email"`
-		jwt.RegisteredClaims
-	}
-
 	AuthenticationRouter struct {
 		UserHandler handler.UserHandler
-		env         config.Config
 	}
 
 	OK  = string
@@ -60,8 +50,8 @@ const (
 	oneMonth = 24 * 30 * time.Hour
 )
 
-func newAuthRouter(h handler.UserHandler, env config.Config) *AuthenticationRouter {
-	return &AuthenticationRouter{UserHandler: h, env: env}
+func newAuthRouter(h handler.UserHandler) *AuthenticationRouter {
+	return &AuthenticationRouter{UserHandler: h}
 }
 
 func (r AuthenticationRouter) register(ctx echo.Context) (err error) {
@@ -79,44 +69,27 @@ func (r AuthenticationRouter) register(ctx echo.Context) (err error) {
 		return echo.NewHTTPError(http.StatusBadRequest, "Password and confirmation do not match.")
 	}
 
-	hashedPw, err := bcrypt.GenerateFromPassword([]byte(newUser.Password), bcrypt.DefaultCost)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
-	}
-
-	signedAccessToken, err := generateNewJwtToken(newUser.Username, newUser.Email, oneDay, r.env.JWT.AccessToken)
+	signedAccessToken, err := utils.GenerateNewJwtToken(newUser.Username, newUser.Email, oneDay, r.UserHandler.Env.JWT.AccessToken)
 	if err != nil {
 		return err
 	}
 
-	signedRefreshToken, err := generateNewJwtToken(newUser.Username, newUser.Email, oneMonth, r.env.JWT.RefreshToken)
+	input := handler.CreateUserInput{
+		Username: newUser.Username,
+		Email:    newUser.Email,
+		Password: newUser.Password,
+	}
+
+	user, err := r.UserHandler.CreateUser(ctx.Request().Context(), input)
 	if err != nil {
 		return err
-	}
-
-	user, err := r.UserHandler.CreateUser(ctx.Request().Context(), db.CreateUserParams{
-		Username:     newUser.Username,
-		Email:        newUser.Email,
-		PasswordHash: string(hashedPw),
-		RefreshToken: sql.NullString{
-			String: signedRefreshToken,
-			Valid:  true,
-		},
-	})
-
-	if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
-
-		return echo.NewHTTPError(http.StatusConflict, err.Error())
-	}
-
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
 	registerPayload := ResponsePayload{
 		AccessToken: signedAccessToken,
 		User:        user,
 	}
+
 	return ctx.JSON(http.StatusCreated, registerPayload)
 }
 
@@ -129,11 +102,11 @@ func (r AuthenticationRouter) refresh(ctx echo.Context) (err error) {
 
 	refreshToken := req.RefreshToken
 
-	validRefreshToken, err := jwt.ParseWithClaims(refreshToken, &CustomTokenClaim{}, func(t *jwt.Token) (interface{}, error) {
-		return []byte(r.env.JWT.RefreshToken), nil
+	validRefreshToken, err := jwt.ParseWithClaims(refreshToken, &utils.CustomTokenClaim{}, func(t *jwt.Token) (interface{}, error) {
+		return []byte(r.UserHandler.Env.JWT.RefreshToken), nil
 	})
 
-	refreshClaim, ok := validRefreshToken.Claims.(*CustomTokenClaim)
+	refreshClaim, ok := validRefreshToken.Claims.(*utils.CustomTokenClaim)
 	if ok && validRefreshToken.Valid {
 		log.Println("User still logged in")
 	} else if errors.Is(err, jwt.ErrTokenMalformed) {
@@ -153,20 +126,20 @@ func (r AuthenticationRouter) refresh(ctx echo.Context) (err error) {
 
 	refreshClaim.ExpiresAt = jwt.NewNumericDate(time.Now().Add(oneMonth))
 
-	signedRefreshToken, err := generateJwtTokenBasedOnExistingClaim(*refreshClaim, r.env.JWT.RefreshToken)
+	signedRefreshToken, err := utils.GenerateJwtTokenBasedOnExistingClaim(*refreshClaim, r.UserHandler.Env.JWT.RefreshToken)
 	if err != nil {
 		return err
 	}
 
 	accessToken := req.AccessToken
 
-	validAccessToken, err := jwt.ParseWithClaims(accessToken, &CustomTokenClaim{}, func(t *jwt.Token) (interface{}, error) {
-		return []byte(r.env.JWT.AccessToken), nil
+	validAccessToken, err := jwt.ParseWithClaims(accessToken, &utils.CustomTokenClaim{}, func(t *jwt.Token) (interface{}, error) {
+		return []byte(r.UserHandler.Env.JWT.AccessToken), nil
 	})
 
-	_, okAcc := validAccessToken.Claims.(*CustomTokenClaim)
+	_, okAcc := validAccessToken.Claims.(*utils.CustomTokenClaim)
 	if !okAcc && !validAccessToken.Valid {
-		accessToken, err = generateNewJwtToken(user.Username, user.Email, oneDay, r.env.JWT.AccessToken)
+		accessToken, err = utils.GenerateNewJwtToken(user.Username, user.Email, oneDay, r.UserHandler.Env.JWT.AccessToken)
 		if err != nil {
 			return err
 		}
@@ -199,32 +172,4 @@ func RegisterAuthRoute(baseUrl string, e *echo.Echo, r AuthenticationRouter) {
 
 	e.POST(baseUrl+"/register", r.register)
 	e.POST(baseUrl+"/refresh", r.refresh)
-}
-
-func generateNewJwtToken(username string, email string, expiryDate time.Duration, signingKey string) (string, error) {
-	tokenClaim := CustomTokenClaim{
-		username,
-		email,
-		jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(expiryDate)),
-		},
-	}
-
-	tokenObj := jwt.NewWithClaims(jwt.SigningMethodHS256, tokenClaim)
-
-	token, err := tokenObj.SignedString([]byte(signingKey))
-	if err != nil {
-		return "", echo.NewHTTPError(http.StatusInternalServerError, err.Error())
-	}
-	return token, nil
-}
-
-func generateJwtTokenBasedOnExistingClaim(claim CustomTokenClaim, signingKey string) (string, error) {
-	tokenObj := jwt.NewWithClaims(jwt.SigningMethodHS256, claim)
-
-	token, err := tokenObj.SignedString([]byte(signingKey))
-	if err != nil {
-		return "", echo.NewHTTPError(http.StatusInternalServerError, err.Error())
-	}
-	return token, nil
 }

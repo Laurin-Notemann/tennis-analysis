@@ -45,13 +45,13 @@ func main() {
 
 	dbQueries := db.New(dbCon)
 
-	userHandler := handler.NewUserHandler(dbQueries)
+	userHandler := handler.NewUserHandler(dbQueries, cfg)
 
 	resourceHandler := handler.ResourceHandlers{
 		UserHandler: *userHandler,
 	}
 
-	server := api.NewApi(ctx, resourceHandler, cfg)
+	server := api.NewApi(ctx, resourceHandler)
 
 	err = server.Start("127.0.0.1:3333")
 	if err != nil {

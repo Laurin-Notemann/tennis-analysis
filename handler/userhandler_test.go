@@ -1,4 +1,4 @@
-package tests
+package handler
 
 import (
 	"context"
@@ -6,24 +6,23 @@ import (
 	"testing"
 
 	"github.com/Laurin-Notemann/tennis-analysis/db"
-	"github.com/Laurin-Notemann/tennis-analysis/handler"
+	"github.com/Laurin-Notemann/tennis-analysis/tests"
 )
 
 func TestUserHandler(t *testing.T) {
-	newUser := db.CreateUserParams{
+	newUser := CreateUserInput{
 		Username:     "laurin",
 		Email:        "laurin@test.de",
-		PasswordHash: "Test",
+		Password: "Test",
 	}
-	dbMock := NewDBQueriesMock()
-	userHandler := handler.UserHandler{
+	dbMock := tests.NewDBQueriesMock()
+	userHandler := UserHandler{
 		DB: dbMock,
 	}
 
 	correctUser := db.User{
 		Username:     "laurin",
 		Email:        "laurin@test.de",
-		PasswordHash: "Test",
 	}
 
 	updateUserArgs := db.UpdateUserByIdParams{
@@ -39,16 +38,18 @@ func TestUserHandler(t *testing.T) {
 	t.Run("CreateUser", func(t *testing.T) {
 		user, err := userHandler.CreateUser(context.Background(), newUser)
 		if err != nil {
-			t.Fatalf("userHanlder.CreateUser(%+v) = nil, %v, want match for correct User", newUser, err)
+			t.Fatalf("userHandler.CreateUser(%+v) = nil, %v, want match for correct User", newUser, err)
 		}
 
 		correctUser.ID = user.ID
+    updateUserArgs.ID = user.ID
 		correctUser.CreatedAt = user.CreatedAt
 		correctUser.UpdatedAt = user.UpdatedAt
-    updateUserArgs.ID = user.ID
+    correctUser.RefreshToken = user.RefreshToken
+    correctUser.PasswordHash = user.PasswordHash
 
 		if user != correctUser {
-			t.Fatalf("userHanlder.CreateUser(%+v) = %+v, nil, want match for correct %+v, nil", newUser, user, correctUser)
+			t.Fatalf("userHandler.CreateUser(%+v) = %+v, nil, want match for correct %+v, nil", newUser, user, correctUser)
 		}
 	})
 

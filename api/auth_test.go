@@ -198,9 +198,9 @@ func TestAuthRoute(t *testing.T) {
 		},
 	}
 
-	userHandler := handler.NewUserHandler(tests.DbQueriesTest())
+	userHandler := handler.NewUserHandler(tests.DbQueriesTest(), cfg)
 
-	authRouter := newAuthRouter(*userHandler, cfg)
+	authRouter := newAuthRouter(*userHandler)
 
 	successAddToDb := 0
 	for _, input := range testUserInputData {

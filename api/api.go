@@ -3,16 +3,15 @@ package api
 import (
 	"context"
 
-	"github.com/Laurin-Notemann/tennis-analysis/config"
 	"github.com/Laurin-Notemann/tennis-analysis/handler"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
 
-func NewApi(ctx context.Context, resource handler.ResourceHandlers, env config.Config) *echo.Echo {
+func NewApi(ctx context.Context, resource handler.ResourceHandlers) *echo.Echo {
   baseUrl := "/api"
 	userRouter := newUserRouter(resource.UserHandler)
-  authRouter := newAuthRouter(resource.UserHandler, env)
+  authRouter := newAuthRouter(resource.UserHandler)
 
 	e := echo.New()
 
