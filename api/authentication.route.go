@@ -55,6 +55,11 @@ type (
 	}
 )
 
+const (
+	oneDay   = 24 * time.Hour
+	oneMonth = 24 * 30 * time.Hour
+)
+
 func newAuthRouter(h handler.UserHandler, env config.Config) *AuthenticationRouter {
 	return &AuthenticationRouter{UserHandler: h, env: env}
 }
@@ -79,12 +84,12 @@ func (r AuthenticationRouter) register(ctx echo.Context) (err error) {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	signedAccessToken, err := generateNewJwtToken(newUser.Username, newUser.Email, time.Now().Add(24*time.Hour), r.env.JWT.AccessToken)
+	signedAccessToken, err := generateNewJwtToken(newUser.Username, newUser.Email, oneDay, r.env.JWT.AccessToken)
 	if err != nil {
 		return err
 	}
 
-	signedRefreshToken, err := generateNewJwtToken(newUser.Username, newUser.Email, time.Now().Add(24*30*time.Hour), r.env.JWT.RefreshToken)
+	signedRefreshToken, err := generateNewJwtToken(newUser.Username, newUser.Email, oneMonth, r.env.JWT.RefreshToken)
 	if err != nil {
 		return err
 	}
@@ -146,7 +151,7 @@ func (r AuthenticationRouter) refresh(ctx echo.Context) (err error) {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	refreshClaim.ExpiresAt = jwt.NewNumericDate(time.Now().Add(24 * 30 * time.Hour))
+	refreshClaim.ExpiresAt = jwt.NewNumericDate(time.Now().Add(oneMonth))
 
 	signedRefreshToken, err := generateJwtTokenBasedOnExistingClaim(*refreshClaim, r.env.JWT.RefreshToken)
 	if err != nil {
@@ -161,7 +166,7 @@ func (r AuthenticationRouter) refresh(ctx echo.Context) (err error) {
 
 	_, okAcc := validAccessToken.Claims.(*CustomTokenClaim)
 	if !okAcc && !validAccessToken.Valid {
-		accessToken, err = generateNewJwtToken(user.Username, user.Email, time.Now().Add(24*time.Hour), r.env.JWT.AccessToken)
+		accessToken, err = generateNewJwtToken(user.Username, user.Email, oneDay, r.env.JWT.AccessToken)
 		if err != nil {
 			return err
 		}
@@ -196,12 +201,12 @@ func RegisterAuthRoute(baseUrl string, e *echo.Echo, r AuthenticationRouter) {
 	e.POST(baseUrl+"/refresh", r.refresh)
 }
 
-func generateNewJwtToken(username string, email string, expiryDate time.Time, signingKey string) (string, error) {
+func generateNewJwtToken(username string, email string, expiryDate time.Duration, signingKey string) (string, error) {
 	tokenClaim := CustomTokenClaim{
 		username,
 		email,
 		jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(expiryDate),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(expiryDate)),
 		},
 	}
 
