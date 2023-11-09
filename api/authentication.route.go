@@ -11,12 +11,14 @@ import (
 	"github.com/labstack/echo/v4"
 	"golang.org/x/crypto/bcrypt"
 
+	"github.com/lib/pq"
+
 	"github.com/Laurin-Notemann/tennis-analysis/config"
 	"github.com/Laurin-Notemann/tennis-analysis/db"
 	"github.com/Laurin-Notemann/tennis-analysis/handler"
 )
 
-type RegiserInput struct {
+type RegisterInput struct {
 	Username string `json:"username"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
@@ -52,10 +54,14 @@ func newAuthRouter(h handler.UserHandler, env config.Config) *AuthenticationRout
 }
 
 func (r AuthenticationRouter) register(ctx echo.Context) (err error) {
-	newUser := new(RegiserInput)
+	newUser := new(RegisterInput)
 
 	if err = ctx.Bind(newUser); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	if newUser.Username == "" || newUser.Email == "" || newUser.Confirm == "" || newUser.Password == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "Missing inputs.")
 	}
 
 	if newUser.Password != newUser.Confirm {
@@ -106,6 +112,12 @@ func (r AuthenticationRouter) register(ctx echo.Context) (err error) {
 			Valid:  true,
 		},
 	})
+
+	if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
+
+		return echo.NewHTTPError(http.StatusConflict, err.Error())
+	}
+
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
@@ -114,8 +126,7 @@ func (r AuthenticationRouter) register(ctx echo.Context) (err error) {
 		AccessToken: signedAccessToken,
 		User:        user,
 	}
-
-	return ctx.JSON(http.StatusOK, registerPayload)
+	return ctx.JSON(http.StatusCreated, registerPayload)
 }
 
 type RefreshReq struct {
