@@ -18,36 +18,42 @@ import (
 	"github.com/Laurin-Notemann/tennis-analysis/handler"
 )
 
-type RegisterInput struct {
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	Confirm  string `json:"confirm"`
-}
+type (
+	RefreshReq struct {
+		AccessToken  string `json:"accessToken"`
+		RefreshToken string `json:"refreshToken"`
+	}
+	RegisterInput struct {
+		Username string `json:"username"`
+		Email    string `json:"email"`
+		Password string `json:"password"`
+		Confirm  string `json:"confirm"`
+	}
 
-type CustomTokenClaim struct {
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	jwt.RegisteredClaims
-}
+	CustomTokenClaim struct {
+		Username string `json:"username"`
+		Email    string `json:"email"`
+		jwt.RegisteredClaims
+	}
 
-type AuthenticationRouter struct {
-	UserHandler handler.UserHandler
-	env         config.Config
-}
+	AuthenticationRouter struct {
+		UserHandler handler.UserHandler
+		env         config.Config
+	}
 
-type OK = string
-type ERR = string
+	OK  = string
+	ERR = string
 
-type Response struct {
-	Status string
-	Res    interface{}
-}
+	Response struct {
+		Status string
+		Res    interface{}
+	}
 
-type ResponsePayload struct {
-	AccessToken string  `json:"accessToken"`
-	User        db.User `json:"user"`
-}
+	ResponsePayload struct {
+		AccessToken string  `json:"accessToken"`
+		User        db.User `json:"user"`
+	}
+)
 
 func newAuthRouter(h handler.UserHandler, env config.Config) *AuthenticationRouter {
 	return &AuthenticationRouter{UserHandler: h, env: env}
@@ -73,34 +79,14 @@ func (r AuthenticationRouter) register(ctx echo.Context) (err error) {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	accessTokenClaim := CustomTokenClaim{
-		newUser.Username,
-		newUser.Email,
-		jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
-		},
-	}
-
-	accessTokenObj := jwt.NewWithClaims(jwt.SigningMethodHS256, accessTokenClaim)
-
-	signedAccessToken, err := accessTokenObj.SignedString([]byte(r.env.JWT.AccessToken))
+	signedAccessToken, err := generateNewJwtToken(newUser.Username, newUser.Email, time.Now().Add(24*time.Hour), r.env.JWT.AccessToken)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
-	refreshTokenClaim := CustomTokenClaim{
-		newUser.Username,
-		newUser.Email,
-		jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * 30 * time.Hour)),
-		},
-	}
-
-	refreshTokenObj := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshTokenClaim)
-
-	signedRefreshToken, err := refreshTokenObj.SignedString([]byte(r.env.JWT.AccessToken))
+	signedRefreshToken, err := generateNewJwtToken(newUser.Username, newUser.Email, time.Now().Add(24*30*time.Hour), r.env.JWT.RefreshToken)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
 	user, err := r.UserHandler.CreateUser(ctx.Request().Context(), db.CreateUserParams{
@@ -127,11 +113,6 @@ func (r AuthenticationRouter) register(ctx echo.Context) (err error) {
 		User:        user,
 	}
 	return ctx.JSON(http.StatusCreated, registerPayload)
-}
-
-type RefreshReq struct {
-	AccessToken  string `json:"accessToken"`
-	RefreshToken string `json:"refreshToken"`
 }
 
 func (r AuthenticationRouter) refresh(ctx echo.Context) (err error) {
@@ -167,12 +148,9 @@ func (r AuthenticationRouter) refresh(ctx echo.Context) (err error) {
 
 	refreshClaim.ExpiresAt = jwt.NewNumericDate(time.Now().Add(24 * 30 * time.Hour))
 
-	refreshTokenObj := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaim)
-
-	// create new refreshToken (so only until the user hasn't been logged in for 30 days will he have to log in again)
-	signedRefreshToken, err := refreshTokenObj.SignedString([]byte(r.env.JWT.AccessToken))
+	signedRefreshToken, err := generateJwtTokenBasedOnExistingClaim(*refreshClaim, r.env.JWT.RefreshToken)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
 	accessToken := req.AccessToken
@@ -183,20 +161,10 @@ func (r AuthenticationRouter) refresh(ctx echo.Context) (err error) {
 
 	_, okAcc := validAccessToken.Claims.(*CustomTokenClaim)
 	if !okAcc && !validAccessToken.Valid {
-		accessTokenClaim := CustomTokenClaim{
-			user.Username,
-			user.Email,
-			jwt.RegisteredClaims{
-				ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
-			},
-		}
-		accessTokenObj := jwt.NewWithClaims(jwt.SigningMethodHS256, accessTokenClaim)
-
-		signedAccessToken, err := accessTokenObj.SignedString([]byte(r.env.JWT.AccessToken))
+		accessToken, err = generateNewJwtToken(user.Username, user.Email, time.Now().Add(24*time.Hour), r.env.JWT.AccessToken)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+			return err
 		}
-		accessToken = signedAccessToken
 	}
 
 	params := db.UpdateUserByIdParams{
@@ -226,4 +194,32 @@ func RegisterAuthRoute(baseUrl string, e *echo.Echo, r AuthenticationRouter) {
 
 	e.POST(baseUrl+"/register", r.register)
 	e.POST(baseUrl+"/refresh", r.refresh)
+}
+
+func generateNewJwtToken(username string, email string, expiryDate time.Time, signingKey string) (string, error) {
+	tokenClaim := CustomTokenClaim{
+		username,
+		email,
+		jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expiryDate),
+		},
+	}
+
+	tokenObj := jwt.NewWithClaims(jwt.SigningMethodHS256, tokenClaim)
+
+	token, err := tokenObj.SignedString([]byte(signingKey))
+	if err != nil {
+		return "", echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+	return token, nil
+}
+
+func generateJwtTokenBasedOnExistingClaim(claim CustomTokenClaim, signingKey string) (string, error) {
+	tokenObj := jwt.NewWithClaims(jwt.SigningMethodHS256, claim)
+
+	token, err := tokenObj.SignedString([]byte(signingKey))
+	if err != nil {
+		return "", echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+	return token, nil
 }
