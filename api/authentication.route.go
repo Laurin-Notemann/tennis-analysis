@@ -61,12 +61,12 @@ func (r AuthenticationRouter) register(ctx echo.Context) (err error) {
 	}
 
 	signedAccessToken, err := validateUserInputAndGetJwt(
-    *newUser, 
-    r.UserHandler.Env.JWT.AccessToken,
-  )
-  if err != nil {
-    return err
-  }
+		*newUser,
+		r.UserHandler.Env.JWT.AccessToken,
+	)
+	if err != nil {
+		return err
+	}
 
 	input := handler.CreateUserInput{
 		Username: newUser.Username,

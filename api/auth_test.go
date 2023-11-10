@@ -24,7 +24,7 @@ type TestError struct {
 	expectedError error
 }
 
-func TestAuthRoute(t *testing.T) {
+func TestRegisterRoute(t *testing.T) {
 	testUserInputData := []TestRegisterInput{
 		{
 			error: TestError{
@@ -148,7 +148,7 @@ func TestAuthRoute(t *testing.T) {
 			},
 			user: RegisterInput{
 				Username: "tim",
-				Email: "tim@test.de",
+				Email:    "tim@test.de",
 				Password: "Test",
 			},
 		},
@@ -163,7 +163,7 @@ func TestAuthRoute(t *testing.T) {
 			},
 			user: RegisterInput{
 				Username: "tim",
-				Email: "tim@test.de",
+				Email:    "tim@test.de",
 				Confirm:  "Test",
 			},
 		},
@@ -177,8 +177,8 @@ func TestAuthRoute(t *testing.T) {
 				},
 			},
 			user: RegisterInput{
-        Username: "",
-				Email: "tim@test.de",
+				Username: "",
+				Email:    "tim@test.de",
 				Confirm:  "Test",
 				Password: "Test",
 			},
@@ -271,7 +271,43 @@ func TestAuthRoute(t *testing.T) {
 					assert.Equal(t, len(allUsers), successAddToDb)
 				}
 			}
-
 		})
 	}
+}
+
+type RefreshInputTest struct {
+	error TestError
+	input RefreshReq
+}
+
+func TestRefreshRoute(t *testing.T) {
+	testInputData := []RefreshInputTest{
+		{
+			error: TestError{
+				isError:       true,
+				expectedError: &echo.HTTPError{},
+			},
+			input: RefreshReq{
+				AccessToken:  "",
+				RefreshToken: "",
+			},
+		},
+	}
+	e := echo.New()
+
+	cfg := config.Config{
+		DB: config.DBConfig{
+			Url:     "",
+			TestUrl: "",
+		},
+		JWT: config.JwtConfig{
+			AccessToken:  "Test",
+			RefreshToken: "Test",
+		},
+	}
+
+	userHandler := handler.NewUserHandler(tests.DbQueriesTest(), cfg)
+
+	authRouter := newAuthRouter(*userHandler)
+
 }
