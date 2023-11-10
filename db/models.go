@@ -50,6 +50,15 @@ type Point struct {
 	PointsOrder sql.NullInt32
 }
 
+type RefreshToken struct {
+	ID         uuid.UUID
+	UserID     uuid.UUID
+	Token      string
+	ExpiryDate time.Time
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
+}
+
 type Set struct {
 	ID        uuid.UUID
 	MatchID   uuid.UUID
@@ -69,11 +78,11 @@ type Team struct {
 }
 
 type User struct {
-	ID           uuid.UUID
-	Username     string
-	Email        string
-	PasswordHash string
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
-	RefreshToken sql.NullString
+	ID             uuid.UUID
+	Username       string
+	Email          string
+	PasswordHash   string
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	RefreshTokenID uuid.UUID
 }

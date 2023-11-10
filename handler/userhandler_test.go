@@ -2,37 +2,32 @@ package handler
 
 import (
 	"context"
-	"database/sql"
 	"testing"
 
 	"github.com/Laurin-Notemann/tennis-analysis/db"
-	"github.com/Laurin-Notemann/tennis-analysis/tests"
+	"github.com/Laurin-Notemann/tennis-analysis/utils"
 )
 
 func TestUserHandler(t *testing.T) {
 	newUser := CreateUserInput{
-		Username:     "laurin",
-		Email:        "laurin@test.de",
+		Username: "laurin",
+		Email:    "laurin@test.de",
 		Password: "Test",
 	}
-	dbMock := tests.NewDBQueriesMock()
+	dbMock := utils.NewDBQueriesMock()
 	userHandler := UserHandler{
 		DB: dbMock,
 	}
 
 	correctUser := db.User{
-		Username:     "laurin",
-		Email:        "laurin@test.de",
+		Username: "laurin",
+		Email:    "laurin@test.de",
 	}
 
 	updateUserArgs := db.UpdateUserByIdParams{
 		Username:     "max",
 		Email:        "max@test.de",
 		PasswordHash: "Max",
-		RefreshToken: sql.NullString{
-			String: "RandomToken",
-			Valid:  true,
-		},
 	}
 
 	t.Run("CreateUser", func(t *testing.T) {
@@ -42,11 +37,10 @@ func TestUserHandler(t *testing.T) {
 		}
 
 		correctUser.ID = user.ID
-    updateUserArgs.ID = user.ID
+		updateUserArgs.ID = user.ID
 		correctUser.CreatedAt = user.CreatedAt
 		correctUser.UpdatedAt = user.UpdatedAt
-    correctUser.RefreshToken = user.RefreshToken
-    correctUser.PasswordHash = user.PasswordHash
+		correctUser.PasswordHash = user.PasswordHash
 
 		if user != correctUser {
 			t.Fatalf("userHandler.CreateUser(%+v) = %+v, nil, want match for correct %+v, nil", newUser, user, correctUser)
@@ -115,7 +109,7 @@ func TestUserHandler(t *testing.T) {
 	})
 
 	t.Run("DeleteUserById", func(t *testing.T) {
-    _, err := userHandler.DeleteUserById(context.Background(), correctUser.ID)
+		_, err := userHandler.DeleteUserById(context.Background(), correctUser.ID)
 		if err != nil {
 			t.Fatalf("userhandler.DeleteUserById(), err when trying to delete user by id(%v): %v", correctUser.ID, err)
 		}

@@ -7,7 +7,6 @@ package db
 
 import (
 	"context"
-	"database/sql"
 
 	uuid "github.com/gofrs/uuid"
 )
@@ -16,28 +15,21 @@ const createUser = `-- name: CreateUser :one
 INSERT INTO users (
   username,
   email,
-  password_hash,
-  refresh_token
+  password_hash
 ) VALUES (
-  $1, $2, $3, $4
+  $1, $2, $3
 )
-RETURNING id, username, email, password_hash, created_at, updated_at, refresh_token
+RETURNING id, username, email, password_hash, created_at, updated_at, refresh_token_id
 `
 
 type CreateUserParams struct {
 	Username     string
 	Email        string
 	PasswordHash string
-	RefreshToken sql.NullString
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
-	row := q.db.QueryRowContext(ctx, createUser,
-		arg.Username,
-		arg.Email,
-		arg.PasswordHash,
-		arg.RefreshToken,
-	)
+	row := q.db.QueryRowContext(ctx, createUser, arg.Username, arg.Email, arg.PasswordHash)
 	var i User
 	err := row.Scan(
 		&i.ID,
@@ -46,7 +38,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.PasswordHash,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.RefreshToken,
+		&i.RefreshTokenID,
 	)
 	return i, err
 }
@@ -54,7 +46,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 const deleteUserById = `-- name: DeleteUserById :one
 DELETE FROM users
 WHERE id = $1 
-RETURNING id, username, email, password_hash, created_at, updated_at, refresh_token
+RETURNING id, username, email, password_hash, created_at, updated_at, refresh_token_id
 `
 
 func (q *Queries) DeleteUserById(ctx context.Context, id uuid.UUID) (User, error) {
@@ -67,13 +59,13 @@ func (q *Queries) DeleteUserById(ctx context.Context, id uuid.UUID) (User, error
 		&i.PasswordHash,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.RefreshToken,
+		&i.RefreshTokenID,
 	)
 	return i, err
 }
 
 const getAllUsers = `-- name: GetAllUsers :many
-SELECT id, username, email, password_hash, created_at, updated_at, refresh_token 
+SELECT id, username, email, password_hash, created_at, updated_at, refresh_token_id 
 FROM users
 `
 
@@ -93,7 +85,7 @@ func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
 			&i.PasswordHash,
 			&i.CreatedAt,
 			&i.UpdatedAt,
-			&i.RefreshToken,
+			&i.RefreshTokenID,
 		); err != nil {
 			return nil, err
 		}
@@ -109,7 +101,7 @@ func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, username, email, password_hash, created_at, updated_at, refresh_token
+SELECT id, username, email, password_hash, created_at, updated_at, refresh_token_id
 FROM users
 WHERE email = $1 
 LIMIT 1
@@ -125,13 +117,13 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.PasswordHash,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.RefreshToken,
+		&i.RefreshTokenID,
 	)
 	return i, err
 }
 
 const getUserById = `-- name: GetUserById :one
-SELECT id, username, email, password_hash, created_at, updated_at, refresh_token
+SELECT id, username, email, password_hash, created_at, updated_at, refresh_token_id
 FROM users
 WHERE id = $1 
 LIMIT 1
@@ -147,13 +139,13 @@ func (q *Queries) GetUserById(ctx context.Context, id uuid.UUID) (User, error) {
 		&i.PasswordHash,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.RefreshToken,
+		&i.RefreshTokenID,
 	)
 	return i, err
 }
 
 const getUserByUsername = `-- name: GetUserByUsername :one
-SELECT id, username, email, password_hash, created_at, updated_at, refresh_token
+SELECT id, username, email, password_hash, created_at, updated_at, refresh_token_id
 FROM users
 WHERE username = $1 
 LIMIT 1
@@ -169,7 +161,7 @@ func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User,
 		&i.PasswordHash,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.RefreshToken,
+		&i.RefreshTokenID,
 	)
 	return i, err
 }
@@ -180,17 +172,15 @@ SET
   username = $1, 
   email = $2,
   password_hash= $3,
-  refresh_token = $4,
   updated_at = Now()
-WHERE id = $5
-RETURNING id, username, email, password_hash, created_at, updated_at, refresh_token
+WHERE id = $4
+RETURNING id, username, email, password_hash, created_at, updated_at, refresh_token_id
 `
 
 type UpdateUserByIdParams struct {
 	Username     string
 	Email        string
 	PasswordHash string
-	RefreshToken sql.NullString
 	ID           uuid.UUID
 }
 
@@ -199,7 +189,6 @@ func (q *Queries) UpdateUserById(ctx context.Context, arg UpdateUserByIdParams) 
 		arg.Username,
 		arg.Email,
 		arg.PasswordHash,
-		arg.RefreshToken,
 		arg.ID,
 	)
 	var i User
@@ -210,7 +199,7 @@ func (q *Queries) UpdateUserById(ctx context.Context, arg UpdateUserByIdParams) 
 		&i.PasswordHash,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.RefreshToken,
+		&i.RefreshTokenID,
 	)
 	return i, err
 }

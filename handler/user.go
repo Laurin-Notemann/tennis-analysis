@@ -2,13 +2,11 @@ package handler
 
 import (
 	"context"
-	"database/sql"
 	"github.com/labstack/echo/v4"
 	"net/http"
 
 	"github.com/Laurin-Notemann/tennis-analysis/config"
 	"github.com/Laurin-Notemann/tennis-analysis/db"
-	"github.com/Laurin-Notemann/tennis-analysis/utils"
 	"github.com/gofrs/uuid"
 	"github.com/lib/pq"
 	"golang.org/x/crypto/bcrypt"
@@ -21,8 +19,8 @@ type UserHandler struct {
 
 func NewUserHandler(DBTX *db.Queries, env config.Config) *UserHandler {
 	return &UserHandler{
-		DB: DBTX,
-    Env: env,
+		DB:  DBTX,
+		Env: env,
 	}
 }
 
@@ -38,19 +36,10 @@ func (u *UserHandler) CreateUser(ctx context.Context, input CreateUserInput) (db
 		return db.User{}, echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	signedRefreshToken, err := utils.GenerateNewJwtToken(input.Username, input.Email, utils.OneMonth, u.Env.JWT.RefreshToken)
-	if err != nil {
-		return db.User{}, err
-	}
-
 	registeredUser := db.CreateUserParams{
 		Username:     input.Username,
 		Email:        input.Email,
 		PasswordHash: string(hashedPw),
-		RefreshToken: sql.NullString{
-			String: signedRefreshToken,
-			Valid:  true,
-		},
 	}
 
 	user, err := u.DB.CreateUser(ctx, registeredUser)

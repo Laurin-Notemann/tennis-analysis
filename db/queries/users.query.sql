@@ -2,10 +2,9 @@
 INSERT INTO users (
   username,
   email,
-  password_hash,
-  refresh_token
+  password_hash
 ) VALUES (
-  $1, $2, $3, $4
+  $1, $2, $3
 )
 RETURNING *;
 
@@ -42,8 +41,7 @@ SET
   username = $1, 
   email = $2,
   password_hash= $3,
-  refresh_token = $4,
   updated_at = Now()
-WHERE id = $5
+WHERE id = $4
 RETURNING *;
 

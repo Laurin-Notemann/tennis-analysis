@@ -66,3 +66,10 @@ run-test-db: ensure-migrate
 	@echo "\n\r\tApplying migrations to testdb\n\r"
 	@migrate -source file://db/migrations -database ${testDb} up >> /dev/null
 	@echo ""
+
+######
+#GEN
+####
+.PHONY: sqlc-gen
+sqlc-gen:
+	sqlc generate
