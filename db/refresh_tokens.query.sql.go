@@ -19,26 +19,26 @@ WITH new_token AS (
         token,
         expiry_date
     ) VALUES (
+        $3,  
         $1,  
-        $2,  
-        $3
+        $2
     )
     RETURNING id
 )
 UPDATE users
 SET refresh_token_id = (SELECT id FROM new_token)
-WHERE users.id = $1
+WHERE users.id = $3
 RETURNING id, username, email, password_hash, created_at, updated_at, refresh_token_id
 `
 
 type CreateTokenParams struct {
-	ID         uuid.UUID
 	Token      string
 	ExpiryDate time.Time
+	UserID     uuid.UUID
 }
 
 func (q *Queries) CreateToken(ctx context.Context, arg CreateTokenParams) (User, error) {
-	row := q.db.QueryRowContext(ctx, createToken, arg.ID, arg.Token, arg.ExpiryDate)
+	row := q.db.QueryRowContext(ctx, createToken, arg.Token, arg.ExpiryDate, arg.UserID)
 	var i User
 	err := row.Scan(
 		&i.ID,

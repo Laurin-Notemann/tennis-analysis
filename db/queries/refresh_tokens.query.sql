@@ -5,15 +5,15 @@ WITH new_token AS (
         token,
         expiry_date
     ) VALUES (
+        sqlc.arg(user_id),  
         $1,  
-        $2,  
-        $3
+        $2
     )
     RETURNING id
 )
 UPDATE users
 SET refresh_token_id = (SELECT id FROM new_token)
-WHERE users.id = $1
+WHERE users.id = sqlc.arg(user_id)
 RETURNING *;
 
 -- name: GetTokenByUserId :one
