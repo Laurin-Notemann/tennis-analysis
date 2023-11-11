@@ -16,8 +16,7 @@ import (
 
 type (
 	RefreshReq struct {
-		AccessToken  string `json:"accessToken"`
-		RefreshToken string `json:"refreshToken"`
+		AccessToken string `json:"accessToken"`
 	}
 	RegisterInput struct {
 		Username string `json:"username"`
@@ -99,14 +98,46 @@ func (r AuthenticationRouter) refresh(ctx echo.Context) (err error) {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	refreshToken := req.RefreshToken
+	// Check if accesstoken is still available
+	accessToken := req.AccessToken
+	validAccessToken, err := jwt.ParseWithClaims(accessToken, &utils.CustomTokenClaim{}, func(t *jwt.Token) (interface{}, error) {
+		return []byte(r.UserHandler.Env.JWT.AccessToken), nil
+	})
+
+	accessTokenClaim, okAcc := validAccessToken.Claims.(*utils.CustomTokenClaim)
+	if !okAcc {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Couldn't parse claim")
+	}
+
+	user, err := r.UserHandler.GetUserById(ctx.Request().Context(), accessTokenClaim.UserID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+	// if accesstoken available return token and user
+	if okAcc && validAccessToken.Valid {
+		payload := ResponsePayload{
+			AccessToken: accessToken,
+			User:        user,
+		}
+		return ctx.JSON(http.StatusOK, payload)
+	}
+	// if not check if refreshtoken is still valid
+	refreshTokenObj, err := r.TokenHandler.GetTokenByUserId(ctx.Request().Context(), user.ID)
+	if err != nil {
+		return err
+	}
+
+	refreshToken := refreshTokenObj.Token
 
 	validRefreshToken, err := jwt.ParseWithClaims(refreshToken, &utils.CustomTokenClaim{}, func(t *jwt.Token) (interface{}, error) {
 		return []byte(r.UserHandler.Env.JWT.RefreshToken), nil
 	})
+	_, ok := validRefreshToken.Claims.(*utils.CustomTokenClaim)
+	if !ok {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Couldn't parse claim.")
+	}
 
-	refreshClaim, ok := validRefreshToken.Claims.(*utils.CustomTokenClaim)
-	if ok && validRefreshToken.Valid {
+	if validRefreshToken.Valid {
 		log.Println("User still logged in")
 	} else if errors.Is(err, jwt.ErrTokenMalformed) {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
@@ -118,49 +149,25 @@ func (r AuthenticationRouter) refresh(ctx echo.Context) (err error) {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	user, err := r.UserHandler.GetUserByEmail(ctx.Request().Context(), refreshClaim.Email)
+	// if valid create new access Token
+	expiryDate := time.Now().Add(utils.OneDay)
+	accessToken, err = utils.GenerateNewJwtToken(user.ID, user.Username, user.Email, expiryDate, r.UserHandler.Env.JWT.AccessToken)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
-	refreshClaim.ExpiresAt = jwt.NewNumericDate(time.Now().Add(utils.OneMonth))
-
-	//	signedRefreshToken, err := utils.GenerateJwtTokenBasedOnExistingClaim(*refreshClaim, r.UserHandler.Env.JWT.RefreshToken)
-	//	if err != nil {
-	//		return err
-	//	}
-
-	accessToken := req.AccessToken
-
-	validAccessToken, err := jwt.ParseWithClaims(accessToken, &utils.CustomTokenClaim{}, func(t *jwt.Token) (interface{}, error) {
-		return []byte(r.UserHandler.Env.JWT.AccessToken), nil
-	})
-
-	_, okAcc := validAccessToken.Claims.(*utils.CustomTokenClaim)
-	if !okAcc && !validAccessToken.Valid {
-		expiryDate := time.Now().Add(utils.OneDay)
-		accessToken, err = utils.GenerateNewJwtToken(user.ID, user.Username, user.Email, expiryDate, r.UserHandler.Env.JWT.AccessToken)
-		if err != nil {
-			return err
-		}
-	}
-
-	params := db.UpdateUserByIdParams{
-		ID:       user.ID,
+	// create new refresh token
+	args := handler.TokenHandlerInput{
+		UserId:   user.ID,
 		Username: user.Username,
 		Email:    user.Email,
 	}
-
-	updatedUser, err := r.UserHandler.UpdateUserById(ctx.Request().Context(), params)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
-	}
+	_, err = r.TokenHandler.UpdateTokenByUserId(ctx.Request().Context(), args)
 
 	payload := ResponsePayload{
 		AccessToken: accessToken,
-		User:        updatedUser,
+		User:        user,
 	}
-
 	return ctx.JSON(http.StatusOK, payload)
 }
 

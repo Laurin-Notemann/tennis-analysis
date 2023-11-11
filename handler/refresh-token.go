@@ -33,12 +33,12 @@ type TokenHandlerInput struct {
 func (h *RefreshTokenHandler) CreateTokenAndReturnUser(ctx context.Context, input TokenHandlerInput) (db.User, error) {
 	duration := time.Now().Add(utils.OneMonth)
 	signedAccessToken, err := utils.GenerateNewJwtToken(
-    input.UserId,
-    input.Username,
-    input.Email,
-    duration,
-    h.Env.JWT.RefreshToken,
-  )
+		input.UserId,
+		input.Username,
+		input.Email,
+		duration,
+		h.Env.JWT.RefreshToken,
+	)
 	if err != nil {
 		return db.User{}, err
 	}
@@ -65,8 +65,26 @@ func (h *RefreshTokenHandler) GetTokenByUserId(ctx context.Context, userId uuid.
 	return token, nil
 }
 
-func (h *RefreshTokenHandler) UpdateTokenByUserId(ctx context.Context, args db.UpdateTokenByUserIdParams) (db.RefreshToken, error) {
-	token, err := h.DB.UpdateTokenByUserId(ctx, args)
+func (h *RefreshTokenHandler) UpdateTokenByUserId(ctx context.Context, input TokenHandlerInput) (db.RefreshToken, error) {
+	duration := time.Now().Add(utils.OneMonth)
+	signedAccessToken, err := utils.GenerateNewJwtToken(
+		input.UserId,
+		input.Username,
+		input.Email,
+		duration,
+		h.Env.JWT.RefreshToken,
+	)
+	if err != nil {
+		return db.RefreshToken{}, err
+	}
+
+	updatedRefreshToken := db.UpdateTokenByUserIdParams{
+		Token:      signedAccessToken,
+		ExpiryDate: duration,
+		UserID:     input.UserId,
+	}
+
+	token, err := h.DB.UpdateTokenByUserId(ctx, updatedRefreshToken)
 	if err != nil {
 		return db.RefreshToken{}, echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
