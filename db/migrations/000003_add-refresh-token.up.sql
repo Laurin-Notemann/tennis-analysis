@@ -11,6 +11,6 @@ BEGIN;
     CONSTRAINT "FK_Refresh_token.user_id" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
   );
 
-  ALTER TABLE "users" ADD COLUMN refresh_token_id uuid UNIQUE DEFAULT NULL;
+  ALTER TABLE "users" ADD COLUMN refresh_token_id uuid;
   ALTER TABLE "users" ADD CONSTRAINT "FK_Users.refresh_token_id" FOREIGN KEY (refresh_token_id) REFERENCES refresh_tokens(id) ON DELETE SET NULL;
 COMMIT;

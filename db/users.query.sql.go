@@ -8,7 +8,7 @@ package db
 import (
 	"context"
 
-	uuid "github.com/gofrs/uuid"
+	"github.com/google/uuid"
 )
 
 const createUser = `-- name: CreateUser :one

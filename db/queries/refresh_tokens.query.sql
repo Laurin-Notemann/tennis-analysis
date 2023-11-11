@@ -28,9 +28,9 @@ SET
   token = $1,
   expiry_date = $2,
   updated_at = Now()
-WHERE user_id = $3
+WHERE user_id = sqlc.arg(user_id)
 RETURNING *;
 
--- name: DeleteTokenById :exec
+-- name: DeleteTokenByUserId :exec
 DELETE FROM refresh_tokens
 WHERE user_id = $1;

@@ -8,15 +8,15 @@ import (
 	"database/sql"
 	"time"
 
-	uuid "github.com/gofrs/uuid"
+	"github.com/google/uuid"
 )
 
 type Game struct {
 	ID        uuid.UUID
-	Winner    uuid.UUID
+	Winner    *uuid.UUID
 	ServerID  uuid.UUID
-	SetID     uuid.UUID
-	MatchID   uuid.UUID
+	SetID     *uuid.UUID
+	MatchID   *uuid.UUID
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
@@ -46,7 +46,7 @@ type Point struct {
 	TeamID      uuid.UUID
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
-	GameID      uuid.UUID
+	GameID      *uuid.UUID
 	PointsOrder sql.NullInt32
 }
 
@@ -62,7 +62,7 @@ type RefreshToken struct {
 type Set struct {
 	ID        uuid.UUID
 	MatchID   uuid.UUID
-	Winner    uuid.UUID
+	Winner    *uuid.UUID
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
@@ -72,7 +72,7 @@ type Team struct {
 	Name      sql.NullString
 	UserID    uuid.UUID
 	PlayerOne uuid.UUID
-	PlayerTwo uuid.UUID
+	PlayerTwo *uuid.UUID
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
@@ -84,5 +84,5 @@ type User struct {
 	PasswordHash   string
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
-	RefreshTokenID uuid.UUID
+	RefreshTokenID *uuid.UUID
 }

@@ -9,7 +9,7 @@ import (
 	"context"
 	"time"
 
-	uuid "github.com/gofrs/uuid"
+	"github.com/google/uuid"
 )
 
 const createToken = `-- name: CreateToken :one
@@ -52,13 +52,13 @@ func (q *Queries) CreateToken(ctx context.Context, arg CreateTokenParams) (User,
 	return i, err
 }
 
-const deleteTokenById = `-- name: DeleteTokenById :exec
+const deleteTokenByUserId = `-- name: DeleteTokenByUserId :exec
 DELETE FROM refresh_tokens
 WHERE user_id = $1
 `
 
-func (q *Queries) DeleteTokenById(ctx context.Context, userID uuid.UUID) error {
-	_, err := q.db.ExecContext(ctx, deleteTokenById, userID)
+func (q *Queries) DeleteTokenByUserId(ctx context.Context, userID uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, deleteTokenByUserId, userID)
 	return err
 }
 

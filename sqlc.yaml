@@ -6,8 +6,8 @@ overrides:
         nullable: true
         engine: postgresql
         go_type:
-          import: "github.com/gofrs/uuid"
-          package: "uuid"
+          import: "github.com/google/uuid"
+          pointer: true
           type: "UUID"
 sql:
     - engine: "postgresql"

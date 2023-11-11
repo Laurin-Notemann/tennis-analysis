@@ -7,13 +7,13 @@ package db
 import (
 	"context"
 
-	uuid "github.com/gofrs/uuid"
+	"github.com/google/uuid"
 )
 
 type Querier interface {
 	CreateToken(ctx context.Context, arg CreateTokenParams) (User, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
-	DeleteTokenById(ctx context.Context, userID uuid.UUID) error
+	DeleteTokenByUserId(ctx context.Context, userID uuid.UUID) error
 	DeleteUserById(ctx context.Context, id uuid.UUID) (User, error)
 	GetAllUsers(ctx context.Context) ([]User, error)
 	GetTokenByUserId(ctx context.Context, userID uuid.UUID) (RefreshToken, error)
