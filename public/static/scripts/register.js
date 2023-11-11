@@ -27,9 +27,7 @@ registerUserForm.addEventListener("submit", async e => {
   console.log(userPayload)
 
   localStorage.setItem("access-token", userPayload.accessToken)
-  localStorage.setItem("refresh-token", userPayload.user.RefreshToken.String)
 
-  console.log(document.cookie)
 })
 
 function loadNavBar() {

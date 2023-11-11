@@ -7,22 +7,23 @@ import (
 	"time"
 
 	"github.com/Laurin-Notemann/tennis-analysis/db"
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 	"golang.org/x/exp/slices"
 )
 
 func (d *DBQueriesMock) CreateUser(ctx context.Context, arg db.CreateUserParams) (db.User, error) {
-	id, err := uuid.NewV4()
+	id, err := uuid.NewUUID()
 	if err != nil {
 		log.Fatalf("could not create uuid: %v", err)
 	}
 	newUser := db.User{
-		ID:           id,
-		Username:     arg.Username,
-		Email:        arg.Email,
-		PasswordHash: arg.PasswordHash,
-		CreatedAt:    time.Now(),
-		UpdatedAt:    time.Now(),
+		ID:             id,
+		Username:       arg.Username,
+		Email:          arg.Email,
+		PasswordHash:   arg.PasswordHash,
+		RefreshTokenID: nil,
+		CreatedAt:      time.Now(),
+		UpdatedAt:      time.Now(),
 	}
 
 	d.users = append(d.users, newUser)

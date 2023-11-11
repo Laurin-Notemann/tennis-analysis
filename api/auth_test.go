@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -199,8 +200,9 @@ func TestRegisterRoute(t *testing.T) {
 	}
 
 	userHandler := handler.NewUserHandler(tests.DbQueriesTest(), cfg)
+	tokenHandler := handler.NewRefreshTokenHandler(tests.DbQueriesTest(), cfg)
 
-	authRouter := newAuthRouter(*userHandler)
+	authRouter := newAuthRouter(*userHandler, *tokenHandler)
 
 	successAddToDb := 0
 	for _, input := range testUserInputData {
@@ -273,6 +275,11 @@ func TestRegisterRoute(t *testing.T) {
 			}
 		})
 	}
+	allUsers, err := userHandler.GetAllUsers(context.Background())
+	for _, val := range allUsers {
+		_, err = userHandler.DeleteUserById(context.Background(), val.ID)
+		assert.NoError(t, err)
+	}
 }
 
 type RefreshInputTest struct {
@@ -280,34 +287,34 @@ type RefreshInputTest struct {
 	input RefreshReq
 }
 
-func TestRefreshRoute(t *testing.T) {
-	testInputData := []RefreshInputTest{
-		{
-			error: TestError{
-				isError:       true,
-				expectedError: &echo.HTTPError{},
-			},
-			input: RefreshReq{
-				AccessToken:  "",
-				RefreshToken: "",
-			},
-		},
-	}
-	e := echo.New()
-
-	cfg := config.Config{
-		DB: config.DBConfig{
-			Url:     "",
-			TestUrl: "",
-		},
-		JWT: config.JwtConfig{
-			AccessToken:  "Test",
-			RefreshToken: "Test",
-		},
-	}
-
-	userHandler := handler.NewUserHandler(tests.DbQueriesTest(), cfg)
-
-	authRouter := newAuthRouter(*userHandler)
-
-}
+//func TestRefreshRoute(t *testing.T) {
+//	testInputData := []RefreshInputTest{
+//		{
+//			error: TestError{
+//				isError:       true,
+//				expectedError: &echo.HTTPError{},
+//			},
+//			input: RefreshReq{
+//				AccessToken:  "",
+//				RefreshToken: "",
+//			},
+//		},
+//	}
+//	e := echo.New()
+//
+//	cfg := config.Config{
+//		DB: config.DBConfig{
+//			Url:     "",
+//			TestUrl: "",
+//		},
+//		JWT: config.JwtConfig{
+//			AccessToken:  "Test",
+//			RefreshToken: "Test",
+//		},
+//	}
+//
+//	userHandler := handler.NewUserHandler(tests.DbQueriesTest(), cfg)
+//
+//	authRouter := newAuthRouter(*userHandler)
+//
+//}

@@ -46,9 +46,11 @@ func main() {
 	dbQueries := db.New(dbCon)
 
 	userHandler := handler.NewUserHandler(dbQueries, cfg)
+	tokenHandler := handler.NewRefreshTokenHandler(dbQueries, cfg)
 
 	resourceHandler := handler.ResourceHandlers{
 		UserHandler: *userHandler,
+    TokenHandler: *tokenHandler,
 	}
 
 	server := api.NewApi(ctx, resourceHandler)

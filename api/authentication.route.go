@@ -1,7 +1,6 @@
 package api
 
 import (
-	"database/sql"
 	"errors"
 	"log"
 	"net/http"
@@ -28,7 +27,8 @@ type (
 	}
 
 	AuthenticationRouter struct {
-		UserHandler handler.UserHandler
+		UserHandler  handler.UserHandler
+		TokenHandler handler.RefreshTokenHandler
 	}
 
 	OK  = string
@@ -45,35 +45,43 @@ type (
 	}
 )
 
-const (
-	oneDay   = 24 * time.Hour
-	oneMonth = 24 * 30 * time.Hour
-)
-
-func newAuthRouter(h handler.UserHandler) *AuthenticationRouter {
-	return &AuthenticationRouter{UserHandler: h}
+func newAuthRouter(h handler.UserHandler, t handler.RefreshTokenHandler) *AuthenticationRouter {
+	return &AuthenticationRouter{UserHandler: h, TokenHandler: t}
 }
 
 func (r AuthenticationRouter) register(ctx echo.Context) (err error) {
-	newUser := new(RegisterInput)
-	if err = ctx.Bind(newUser); err != nil {
+	registerInput := new(RegisterInput)
+	if err = ctx.Bind(registerInput); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	signedAccessToken, err := validateUserInputAndGetJwt(
-		*newUser,
-		r.UserHandler.Env.JWT.AccessToken,
+	err = validateUserInputAndGetJwt(
+		*registerInput,
 	)
 	if err != nil {
 		return err
 	}
 
-	input := handler.CreateUserInput{
-		Username: newUser.Username,
-		Email:    newUser.Email,
-		Password: newUser.Password,
+	userInput := handler.CreateUserInput{
+		Username: registerInput.Username,
+		Email:    registerInput.Email,
+		Password: registerInput.Password,
 	}
-	user, err := r.UserHandler.CreateUser(ctx.Request().Context(), input)
+	newUser, err := r.UserHandler.CreateUser(ctx.Request().Context(), userInput)
+	if err != nil {
+		return err
+	}
+
+	user, err := r.TokenHandler.CreateTokenAndReturnUser(
+		ctx.Request().Context(),
+		handler.TokenHandlerInput{
+			UserId:   newUser.ID,
+			Username: newUser.Username,
+			Email:    newUser.Email,
+		})
+
+	expiryDate := time.Now().Add(utils.OneDay)
+	signedAccessToken, err := utils.GenerateNewJwtToken(user.ID, user.Username, user.Email, expiryDate, r.UserHandler.Env.JWT.AccessToken)
 	if err != nil {
 		return err
 	}
@@ -115,12 +123,12 @@ func (r AuthenticationRouter) refresh(ctx echo.Context) (err error) {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	refreshClaim.ExpiresAt = jwt.NewNumericDate(time.Now().Add(oneMonth))
+	refreshClaim.ExpiresAt = jwt.NewNumericDate(time.Now().Add(utils.OneMonth))
 
-	signedRefreshToken, err := utils.GenerateJwtTokenBasedOnExistingClaim(*refreshClaim, r.UserHandler.Env.JWT.RefreshToken)
-	if err != nil {
-		return err
-	}
+	//	signedRefreshToken, err := utils.GenerateJwtTokenBasedOnExistingClaim(*refreshClaim, r.UserHandler.Env.JWT.RefreshToken)
+	//	if err != nil {
+	//		return err
+	//	}
 
 	accessToken := req.AccessToken
 
@@ -130,7 +138,8 @@ func (r AuthenticationRouter) refresh(ctx echo.Context) (err error) {
 
 	_, okAcc := validAccessToken.Claims.(*utils.CustomTokenClaim)
 	if !okAcc && !validAccessToken.Valid {
-		accessToken, err = utils.GenerateNewJwtToken(user.Username, user.Email, oneDay, r.UserHandler.Env.JWT.AccessToken)
+		expiryDate := time.Now().Add(utils.OneDay)
+		accessToken, err = utils.GenerateNewJwtToken(user.ID, user.Username, user.Email, expiryDate, r.UserHandler.Env.JWT.AccessToken)
 		if err != nil {
 			return err
 		}
@@ -140,10 +149,6 @@ func (r AuthenticationRouter) refresh(ctx echo.Context) (err error) {
 		ID:       user.ID,
 		Username: user.Username,
 		Email:    user.Email,
-		RefreshToken: sql.NullString{
-			String: signedRefreshToken,
-			Valid:  true,
-		},
 	}
 
 	updatedUser, err := r.UserHandler.UpdateUserById(ctx.Request().Context(), params)
@@ -165,19 +170,14 @@ func RegisterAuthRoute(baseUrl string, e *echo.Echo, r AuthenticationRouter) {
 	e.POST(baseUrl+"/refresh", r.refresh)
 }
 
-func validateUserInputAndGetJwt(input RegisterInput, token string) (string, error) {
+func validateUserInputAndGetJwt(input RegisterInput) error {
 	if input.Username == "" || input.Email == "" || input.Confirm == "" || input.Password == "" {
-		return "", echo.NewHTTPError(http.StatusBadRequest, "Missing inputs.")
+		return echo.NewHTTPError(http.StatusBadRequest, "Missing inputs.")
 	}
 
 	if input.Password != input.Confirm {
-		return "", echo.NewHTTPError(http.StatusBadRequest, "Password and confirmation do not match.")
+		return echo.NewHTTPError(http.StatusBadRequest, "Password and confirmation do not match.")
 	}
 
-	signedAccessToken, err := utils.GenerateNewJwtToken(input.Username, input.Email, oneDay, token)
-	if err != nil {
-		return "", err
-	}
-
-	return signedAccessToken, nil
+	return nil
 }

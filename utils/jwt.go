@@ -5,10 +5,12 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 )
 
 type CustomTokenClaim struct {
+	UserID   uuid.UUID `json:"userId"`
 	Username string `json:"username"`
 	Email    string `json:"email"`
 	jwt.RegisteredClaims
@@ -19,12 +21,19 @@ const (
 	OneMonth = 24 * 30 * time.Hour
 )
 
-func GenerateNewJwtToken(username string, email string, expiryDate time.Duration, signingKey string) (string, error) {
+func GenerateNewJwtToken(
+	userId uuid.UUID,
+	username string,
+	email string,
+	expiryDate time.Time,
+	signingKey string,
+) (string, error) {
 	tokenClaim := CustomTokenClaim{
+		userId,
 		username,
 		email,
 		jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(expiryDate)),
+			ExpiresAt: jwt.NewNumericDate(expiryDate),
 		},
 	}
 

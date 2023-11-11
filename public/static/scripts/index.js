@@ -11,7 +11,6 @@ loadNavBar()
 
 async function isLoggedIn() {
   const accessToken = localStorage.getItem("access-token")
-  const refreshToken = localStorage.getItem("refresh-token")
 
   const body = {
     accessToken,

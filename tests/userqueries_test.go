@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/Laurin-Notemann/tennis-analysis/db"
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 )
 
 type UserMock struct {

@@ -2,12 +2,13 @@ package handler
 
 import (
 	"context"
-	"github.com/labstack/echo/v4"
 	"net/http"
+
+	"github.com/labstack/echo/v4"
 
 	"github.com/Laurin-Notemann/tennis-analysis/config"
 	"github.com/Laurin-Notemann/tennis-analysis/db"
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 	"github.com/lib/pq"
 	"golang.org/x/crypto/bcrypt"
 )
