@@ -283,38 +283,93 @@ func TestRegisterRoute(t *testing.T) {
 }
 
 type RefreshInputTest struct {
+	name  string
 	error TestError
 	input RefreshReq
 }
 
-//func TestRefreshRoute(t *testing.T) {
-//	testInputData := []RefreshInputTest{
-//		{
-//			error: TestError{
-//				isError:       true,
-//				expectedError: &echo.HTTPError{},
-//			},
-//			input: RefreshReq{
-//				AccessToken:  "",
-//				RefreshToken: "",
-//			},
-//		},
-//	}
-//	e := echo.New()
-//
-//	cfg := config.Config{
-//		DB: config.DBConfig{
-//			Url:     "",
-//			TestUrl: "",
-//		},
-//		JWT: config.JwtConfig{
-//			AccessToken:  "Test",
-//			RefreshToken: "Test",
-//		},
-//	}
-//
-//	userHandler := handler.NewUserHandler(tests.DbQueriesTest(), cfg)
-//
-//	authRouter := newAuthRouter(*userHandler)
-//
-//}
+func TestRefreshRoute(t *testing.T) {
+	e := echo.New()
+
+	cfg := config.Config{
+		DB: config.DBConfig{
+			Url:     "",
+			TestUrl: "",
+		},
+		JWT: config.JwtConfig{
+			AccessToken:  "Test",
+			RefreshToken: "Test",
+		},
+	}
+
+	userHandler := handler.NewUserHandler(tests.DbQueriesTest(), cfg)
+	tokenHandler := handler.NewRefreshTokenHandler(tests.DbQueriesTest(), cfg)
+
+	authRouter := newAuthRouter(*userHandler, *tokenHandler)
+
+	userInput := RegisterInput{
+		Username: "laurin",
+		Email:    "laurin@test.de",
+		Password: "Test",
+		Confirm:  "Test",
+	}
+	encodeUser, err := json.Marshal(userInput)
+	if err != nil {
+		t.Fatalf("Problem with encoding user %v", err)
+	}
+	req := httptest.NewRequest(http.MethodPost, "/api/register", strings.NewReader(string(encodeUser)))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+	err = authRouter.register(c)
+	assert.NoError(t, err)
+
+	user := new(ResponsePayload)
+	err = json.Unmarshal(rec.Body.Bytes(), user)
+	if err != nil {
+		t.Fatalf("Couldn't decode User %v", err)
+	}
+
+	testInputData := []RefreshInputTest{
+		{
+			name: "valid accessToken",
+			error: TestError{
+				isError:       false,
+				expectedError: nil,
+			},
+			input: RefreshReq{
+				AccessToken: user.AccessToken,
+			},
+		},
+	}
+
+	for _, data := range testInputData {
+		t.Run("/refresh" + data.name, func(t *testing.T) {
+			encodeRefreshReq, err := json.Marshal(data.input)
+			if err != nil {
+				t.Fatalf("Problem with encoding user %v", err)
+			}
+
+			req := httptest.NewRequest(http.MethodPost, "/api/refresh", strings.NewReader(string(encodeRefreshReq)))
+			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+			rec := httptest.NewRecorder()
+			c := e.NewContext(req, rec)
+
+			err = authRouter.refresh(c)
+
+			if data.error.isError {
+			} else {
+				if assert.NoError(t, err) {
+					userRes := new(ResponsePayload)
+
+					err := json.Unmarshal(rec.Body.Bytes(), userRes)
+					if err != nil {
+						t.Fatalf("Couldn't decode User %v", err)
+					}
+					assert.Equal(t, user.User, userRes.User)
+					assert.Equal(t, user.AccessToken, userRes.AccessToken)
+				}
+			}
+		})
+	}
+}
