@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/Laurin-Notemann/tennis-analysis/db"
+	"github.com/Laurin-Notemann/tennis-analysis/utils"
 	"github.com/google/uuid"
 )
 
@@ -16,7 +17,7 @@ type UserMock struct {
 }
 
 func TestUserDbQueries(t *testing.T) {
-	testDbQueries := DbQueriesTest()
+	testDbQueries := utils.DbQueriesTest()
 	userMock := UserMock{
 		user: db.User{},
 		createUser: db.CreateUserParams{

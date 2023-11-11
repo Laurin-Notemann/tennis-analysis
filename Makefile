@@ -58,18 +58,18 @@ test: run-test-db
 	docker rm tennistestdb 2> /dev/null; \
 	}
 
-.PHONY: test-refresh-token
-test-refresh-token: run-test-db run-example-data
-	@{ \
-	trap 'docker compose stop tennistestdb 2> /dev/null; docker rm tennistestdb 2> /dev/null; exit 1' ERR; \
-	go test ./... -v -p 1; \
-	docker compose stop tennistestdb 2> /dev/null; \
-	docker rm tennistestdb 2> /dev/null; \
-	}
-
-.PHONY: run-example-data
-run-example-data: run-test-db 
-	psql ${testDb} -f ./tests/example-user.sql -q
+# .PHONY: test-refresh-token
+# test-refresh-token: run-test-db run-example-data
+# 	@{ \
+# 	trap 'docker compose stop tennistestdb 2> /dev/null; docker rm tennistestdb 2> /dev/null; exit 1' ERR; \
+# 	go test ./... -v -p 1; \
+# 	docker compose stop tennistestdb 2> /dev/null; \
+# 	docker rm tennistestdb 2> /dev/null; \
+# 	}
+# 
+# .PHONY: run-example-data
+# run-example-data: run-test-db 
+# 	psql ${testDb} -f ./tests/example-user.sql -q
 
 
 .PHONY: run-test-db 

@@ -10,7 +10,7 @@ import (
 
 	"github.com/Laurin-Notemann/tennis-analysis/config"
 	"github.com/Laurin-Notemann/tennis-analysis/handler"
-	"github.com/Laurin-Notemann/tennis-analysis/tests"
+	"github.com/Laurin-Notemann/tennis-analysis/utils"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 )
@@ -199,8 +199,8 @@ func TestRegisterRoute(t *testing.T) {
 		},
 	}
 
-	userHandler := handler.NewUserHandler(tests.DbQueriesTest(), cfg)
-	tokenHandler := handler.NewRefreshTokenHandler(tests.DbQueriesTest(), cfg)
+	userHandler := handler.NewUserHandler(utils.DbQueriesTest(), cfg)
+	tokenHandler := handler.NewRefreshTokenHandler(utils.DbQueriesTest(), cfg)
 
 	authRouter := newAuthRouter(*userHandler, *tokenHandler)
 
@@ -302,8 +302,8 @@ func TestRefreshRoute(t *testing.T) {
 		},
 	}
 
-	userHandler := handler.NewUserHandler(tests.DbQueriesTest(), cfg)
-	tokenHandler := handler.NewRefreshTokenHandler(tests.DbQueriesTest(), cfg)
+	userHandler := handler.NewUserHandler(utils.DbQueriesTest(), cfg)
+	tokenHandler := handler.NewRefreshTokenHandler(utils.DbQueriesTest(), cfg)
 
 	authRouter := newAuthRouter(*userHandler, *tokenHandler)
 
@@ -372,4 +372,7 @@ func TestRefreshRoute(t *testing.T) {
 			}
 		})
 	}
+
+  _, err = userHandler.DeleteUserById(req.Context(), user.User.ID)
+  assert.NoError(t, err)
 }

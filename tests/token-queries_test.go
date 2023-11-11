@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/Laurin-Notemann/tennis-analysis/db"
+	"github.com/Laurin-Notemann/tennis-analysis/utils"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -23,7 +24,7 @@ type testToken struct {
 }
 
 func TestRefreshTokenQueries(t *testing.T) {
-	testDbQueries := DbQueriesTest()
+	testDbQueries := utils.DbQueriesTest()
 	user := getTestUser(t, testDbQueries)
 	context := context.Background()
 	token := testToken{
