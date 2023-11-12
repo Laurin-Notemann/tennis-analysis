@@ -139,7 +139,7 @@ func (r AuthenticationRouter) login(ctx echo.Context) (err error) {
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(loginReq.Password))
 	if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		return echo.NewHTTPError(http.StatusUnauthorized, err.Error())
 	} else if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
@@ -185,6 +185,9 @@ func (r *AuthenticationRouter) validateAccessToken(accessToken string, valid *jw
 }
 
 func (r *AuthenticationRouter) parseTokenGetUser(accessToken string, ctx echo.Context) (db.User, *jwt.Token, error) {
+  if accessToken == "" {
+    return db.User{}, nil, echo.NewHTTPError(http.StatusUnauthorized, "Access Token is empty")
+  }
 	validAccessToken, err := jwt.ParseWithClaims(accessToken, &utils.CustomTokenClaim{}, func(t *jwt.Token) (interface{}, error) {
 		return []byte(r.UserHandler.Env.JWT.AccessToken), nil
 	})

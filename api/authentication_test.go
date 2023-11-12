@@ -414,7 +414,7 @@ func TestLoginRoute(t *testing.T) {
 			error: TestError{
 				isError: true,
 				expectedError: &echo.HTTPError{
-					Code:     http.StatusBadRequest,
+					Code:     http.StatusUnauthorized,
 					Message:  bcrypt.ErrMismatchedHashAndPassword.Error(),
 					Internal: error(nil),
 				},

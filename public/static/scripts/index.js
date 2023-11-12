@@ -1,50 +1,34 @@
-async function loadNavBar() {
-  const { success, payload } = isLoggedIn()
-  if (success) {
-    console.log("test1")
-  } else {
-    console.log("test2")
-  }
-}
+import { loadNavBar } from "./navbar.js";
 
 loadNavBar()
 
-async function isLoggedIn() {
-  const accessToken = localStorage.getItem("access-token")
+async function doSomething() {
 
-  const body = {
-    accessToken,
-    refreshToken
-  }
+  const userId = localStorage.getItem("userId")
+  const htmlBody = document.querySelector("body")
+  if (userId) {
+    const testButton = document.createElement("button")
+    htmlBody.appendChild(testButton)
 
-  const res = await fetch("/api/refresh", {
-    method: "POST",
-    body: JSON.stringify(body),
-    headers: {
-      "Content-Type": "application/json"
-    }
-  })
+    testButton.innerHTML = "Test"
+    testButton.addEventListener("click", async e => {
+      e.preventDefault()
 
-  const payload = await res.json()
+      const token = localStorage.getItem("access-token")
+      const res = await fetch("/api/user/" + userId, {
+        headers: {
+          Authorization: "Bearer " + token
+        }
+      })
 
-  if (res.status == 400) {
-    return {
-      success: false,
-      payload,
-    }
-  } else if (res.status == 401) {
-    return {
-      success: false,
-      payload,
-    }
-  } else if (res.status == 500) {
-    return {
-      success: false,
-      payload,
-    }
-  }
-  return {
-    success: true,
-    payload
+      console.log(res)
+      console.log(await res.json())
+    })
+  } else {
+    const err = document.createElement("p")
+    err.innerHTML = "Pls log in to Test"
+    htmlBody.appendChild(err)
   }
 }
+
+doSomething()
