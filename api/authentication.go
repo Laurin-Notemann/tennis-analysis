@@ -69,22 +69,13 @@ func (r AuthenticationRouter) register(ctx echo.Context) (err error) {
 		return err
 	}
 
-	expiryDate := time.Now().Add(utils.OneDay)
-	tokeGenInput := utils.TokenGenInput{
-		UserId:        user.ID,
-		Username:      user.Username,
-		Email:         user.Email,
-		ExpiryDate:    expiryDate,
-		SigningKey:    r.UserHandler.Env.JWT.AccessToken,
-		IsAccessToken: true,
-	}
-	signedAccessToken, err := r.TokenGen.GenerateNewJwtToken(tokeGenInput)
+	accessToken, err := r.genAccessToken(&user)
 	if err != nil {
 		return err
 	}
 
 	registerPayload := ResponsePayload{
-		AccessToken: signedAccessToken,
+		AccessToken: accessToken,
 		User:        user,
 	}
 	return ctx.JSON(http.StatusCreated, registerPayload)
@@ -112,17 +103,7 @@ func (r AuthenticationRouter) refresh(ctx echo.Context) (err error) {
 		return err
 	}
 
-	// if valid create new access Token
-	expiryDate := time.Now().Add(utils.OneDay)
-	tokeGenInput := utils.TokenGenInput{
-		UserId:        user.ID,
-		Username:      user.Username,
-		Email:         user.Email,
-		ExpiryDate:    expiryDate,
-		SigningKey:    r.UserHandler.Env.JWT.AccessToken,
-		IsAccessToken: true,
-	}
-	accessToken, err = r.TokenGen.GenerateNewJwtToken(tokeGenInput)
+	accessToken, err = r.genAccessToken(&user)
 	if err != nil {
 		return err
 	}
@@ -237,4 +218,22 @@ func (r *AuthenticationRouter) createUserAndToken(ctx echo.Context, registerInpu
 	}
 
 	return user, nil
+}
+
+func (r *AuthenticationRouter) genAccessToken(user *db.User) (string, error) {
+	expiryDate := time.Now().Add(utils.OneDay)
+	tokeGenInput := utils.TokenGenInput{
+		UserId:        user.ID,
+		Username:      user.Username,
+		Email:         user.Email,
+		ExpiryDate:    expiryDate,
+		SigningKey:    r.UserHandler.Env.JWT.AccessToken,
+		IsAccessToken: true,
+	}
+	signedAccessToken, err := r.TokenGen.GenerateNewJwtToken(tokeGenInput)
+	if err != nil {
+		return "", err
+	}
+
+	return signedAccessToken, nil
 }
