@@ -2,22 +2,22 @@ package tests
 
 import (
 	"context"
-	"database/sql"
 	"testing"
 
 	"github.com/Laurin-Notemann/tennis-analysis/db"
-	"github.com/gofrs/uuid"
+	"github.com/Laurin-Notemann/tennis-analysis/utils"
+	"github.com/google/uuid"
 )
 
 type UserMock struct {
-	user       db.User
-	createUser db.CreateUserParams
-	id         uuid.UUID
-  updateUserArgs db.UpdateUserByIdParams
+	user           db.User
+	createUser     db.CreateUserParams
+	id             uuid.UUID
+	updateUserArgs db.UpdateUserByIdParams
 }
 
 func TestUserDbQueries(t *testing.T) {
-	testDbQueries := DbQueriesTest()
+	testDbQueries := utils.DbQueriesTest()
 	userMock := UserMock{
 		user: db.User{},
 		createUser: db.CreateUserParams{
@@ -25,18 +25,14 @@ func TestUserDbQueries(t *testing.T) {
 			Email:        "laurin@test.de",
 			PasswordHash: "Test",
 		},
-    updateUserArgs: db.UpdateUserByIdParams{
-      Username: "max",
-      Email: "max@test.de",
-      PasswordHash: "Max",
-      RefreshToken: sql.NullString{
-        String: "RandomToken",
-        Valid: true,
-      },
-    },
+		updateUserArgs: db.UpdateUserByIdParams{
+			Username:     "max",
+			Email:        "max@test.de",
+			PasswordHash: "Max",
+		},
 	}
 
-  ctx :=context.Background()
+	ctx := context.Background()
 
 	t.Run("CreateUser", func(t *testing.T) {
 		user, err := testDbQueries.CreateUser(ctx, userMock.createUser)
@@ -47,7 +43,7 @@ func TestUserDbQueries(t *testing.T) {
 
 		userMock.user = user
 
-    userMock.updateUserArgs.ID = user.ID
+		userMock.updateUserArgs.ID = user.ID
 
 		if user.Email != userMock.createUser.Email && user.PasswordHash != userMock.createUser.PasswordHash && user.Username != userMock.createUser.Username {
 			t.Fatalf("testDbQueries.CreateUser(%+v) = %+v, nil, output user should have the same content as the input", userMock.createUser, user)
@@ -77,7 +73,7 @@ func TestUserDbQueries(t *testing.T) {
 	})
 
 	t.Run("GetUserByEmail", func(t *testing.T) {
-    email := "laurin@test.de"
+		email := "laurin@test.de"
 		user, err := testDbQueries.GetUserByEmail(ctx, email)
 		if err != nil {
 			t.Fatalf("GetUserByEmail() on testdb couldn't get any User with email %v, %v", email, err)
@@ -89,7 +85,7 @@ func TestUserDbQueries(t *testing.T) {
 	})
 
 	t.Run("GetUserByUsername", func(t *testing.T) {
-    username := "laurin"
+		username := "laurin"
 		user, err := testDbQueries.GetUserByUsername(ctx, username)
 		if err != nil {
 			t.Fatalf("GetUserByUsername() on testdb couldn't get any User with username %v, %v", username, err)
@@ -101,12 +97,12 @@ func TestUserDbQueries(t *testing.T) {
 	})
 
 	t.Run("UpdateUserById", func(t *testing.T) {
-    user, err := testDbQueries.UpdateUserById(ctx, userMock.updateUserArgs)
+		user, err := testDbQueries.UpdateUserById(ctx, userMock.updateUserArgs)
 		if err != nil {
 			t.Fatalf("UpdateUserById() on testdb couldn't update any user with id %v, %v", userMock.id, err)
 		}
 
-    userMock.user = user
+		userMock.user = user
 
 		if user.Email != userMock.updateUserArgs.Email && user.ID != userMock.id && user.Username != userMock.updateUserArgs.Username {
 			t.Fatalf("testDbQueries.UpdateUserById() = got %+v, nil should have at gotten user with Email %+v", user, userMock.user.Email)
@@ -119,12 +115,12 @@ func TestUserDbQueries(t *testing.T) {
 			t.Fatalf("DeleteUserById() on testdb couldn't delete any User with id %v, %v", userMock.id, err)
 		}
 
-    users, err := testDbQueries.GetAllUsers(ctx)
-    if err != nil {
-      t.Fatalf("GetAllUsers() couldn't get any users: %v", err)
-    }
+		users, err := testDbQueries.GetAllUsers(ctx)
+		if err != nil {
+			t.Fatalf("GetAllUsers() couldn't get any users: %v", err)
+		}
 
-		if len(users) > 0{
+		if len(users) > 0 {
 			t.Fatalf("testDbQueries.DeleteUserById() = %+v, nil, want empty users slice, got %+v", user, users)
 		}
 	})

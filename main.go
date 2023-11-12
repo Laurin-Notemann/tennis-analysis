@@ -14,6 +14,7 @@ import (
 	"github.com/Laurin-Notemann/tennis-analysis/config"
 	"github.com/Laurin-Notemann/tennis-analysis/db"
 	"github.com/Laurin-Notemann/tennis-analysis/handler"
+	"github.com/Laurin-Notemann/tennis-analysis/utils"
 )
 
 func main() {
@@ -45,15 +46,16 @@ func main() {
 
 	dbQueries := db.New(dbCon)
 
-	userHandler := handler.NewUserHandler(dbQueries)
-  
-  resourceHandler := handler.ResourceHandlers{
-    UserHandler: *userHandler,
-  }
+	tokenGen := utils.ProdTokenGenerator{}
+	userHandler := handler.NewUserHandler(dbQueries, cfg)
+	tokenHandler := handler.NewRefreshTokenHandler(dbQueries, cfg, &tokenGen)
 
-	server := api.NewApi(ctx, resourceHandler)
+	resourceHandler := handler.ResourceHandlers{
+		UserHandler:  *userHandler,
+		TokenHandler: *tokenHandler,
+	}
 
-
+	server := api.NewApi(ctx, resourceHandler, &tokenGen)
 
 	err = server.Start("127.0.0.1:3333")
 	if err != nil {

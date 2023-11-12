@@ -41,8 +41,7 @@ SET
   username = $1, 
   email = $2,
   password_hash= $3,
-  refresh_token = $4,
   updated_at = Now()
-WHERE id = $5
+WHERE id = $4
 RETURNING *;
 

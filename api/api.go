@@ -4,14 +4,14 @@ import (
 	"context"
 
 	"github.com/Laurin-Notemann/tennis-analysis/handler"
+	"github.com/Laurin-Notemann/tennis-analysis/utils"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
 
-func NewApi(ctx context.Context, resource handler.ResourceHandlers) *echo.Echo {
-  baseUrl := "/api"
-	userRouter := newUserRouter(resource.UserHandler)
-  authRouter := newAuthRouter(resource.UserHandler)
+func NewApi(ctx context.Context, resource handler.ResourceHandlers, tokenGen utils.TokenGenerator) *echo.Echo {
+	baseUrl := "/api"
+	authRouter := newAuthRouter(resource.UserHandler, resource.TokenHandler, tokenGen)
 
 	e := echo.New()
 
@@ -19,9 +19,8 @@ func NewApi(ctx context.Context, resource handler.ResourceHandlers) *echo.Echo {
 	e.Use(middleware.CORS())
 	e.Use(middleware.Recover())
 
-	RegisterUserRoute(e, *userRouter)
 	RegisterAuthRoute(baseUrl, e, *authRouter)
-  RegisterHtmlPageRoutes(e)
+	RegisterHtmlPageRoutes(e)
 
 	return e
 }

@@ -26,11 +26,25 @@ test-migrate-down: ensure-migrate
 	migrate -source file://db/migrations -database ${dbConnectionString} down
 
 .PHONY: test-migrations
-test-migrations: ensure-migrate test-migrate-up test-migrate-down test-migrate-down
+test-migrations: ensure-migrate test-migrate-up test-migrate-down test-migrate-up
 
-.PHONY: some-trash
-some-trash:
-	@echo "Hello" >> /dev/null
+#######
+#Setup#
+#######
+.PHONY: start-dev-env
+start-dev-env: ensure-migrate
+	@docker compose up tennisdb -d  
+	@sleep 1
+	@migrate -source file://db/migrations -database ${dbConnectionString} up
+
+.PHONY: end-dev-env
+end-dev-env: 
+	@docker compose stop tennisdb
+	@docker rm tennisdb
+
+.PHONY: restart-dev-env
+restart-dev-env: ensure-migrate end-dev-env start-dev-env
+
 ######
 #Test#
 ######
@@ -39,10 +53,24 @@ testDb := postgresql://postgres:admin@127.0.0.1:5436/tennistest?sslmode=disable
 test: run-test-db
 	@{ \
 	trap 'docker compose stop tennistestdb 2> /dev/null; docker rm tennistestdb 2> /dev/null; exit 1' ERR; \
-	go test ./tests -v -p 1; \
+	go test ./... -v -p 1; \
 	docker compose stop tennistestdb 2> /dev/null; \
 	docker rm tennistestdb 2> /dev/null; \
 	}
+
+# .PHONY: test-refresh-token
+# test-refresh-token: run-test-db run-example-data
+# 	@{ \
+# 	trap 'docker compose stop tennistestdb 2> /dev/null; docker rm tennistestdb 2> /dev/null; exit 1' ERR; \
+# 	go test ./... -v -p 1; \
+# 	docker compose stop tennistestdb 2> /dev/null; \
+# 	docker rm tennistestdb 2> /dev/null; \
+# 	}
+# 
+# .PHONY: run-example-data
+# run-example-data: run-test-db 
+# 	psql ${testDb} -f ./tests/example-user.sql -q
+
 
 .PHONY: run-test-db 
 run-test-db: ensure-migrate
@@ -52,3 +80,10 @@ run-test-db: ensure-migrate
 	@echo "\n\r\tApplying migrations to testdb\n\r"
 	@migrate -source file://db/migrations -database ${testDb} up >> /dev/null
 	@echo ""
+
+######
+#GEN
+####
+.PHONY: sqlc-gen
+sqlc-gen:
+	sqlc generate

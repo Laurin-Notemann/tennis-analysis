@@ -2,25 +2,53 @@ package handler
 
 import (
 	"context"
+	"net/http"
 
+	"github.com/labstack/echo/v4"
+
+	"github.com/Laurin-Notemann/tennis-analysis/config"
 	"github.com/Laurin-Notemann/tennis-analysis/db"
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
+	"github.com/lib/pq"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type UserHandler struct {
-	DB db.Querier
+	DB  db.Querier
+	Env config.Config
 }
 
-func NewUserHandler(DBTX *db.Queries) *UserHandler {
+func NewUserHandler(DBTX *db.Queries, env config.Config) *UserHandler {
 	return &UserHandler{
-		DB: DBTX,
+		DB:  DBTX,
+		Env: env,
 	}
 }
 
-func (u *UserHandler) CreateUser(ctx context.Context, newUser db.CreateUserParams) (db.User, error) {
-	user, err := u.DB.CreateUser(ctx, newUser)
+type CreateUserInput struct {
+	Username string
+	Email    string
+	Password string
+}
+
+func (u *UserHandler) CreateUser(ctx context.Context, input CreateUserInput) (db.User, error) {
+	hashedPw, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return db.User{}, err
+		return db.User{}, echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	registeredUser := db.CreateUserParams{
+		Username:     input.Username,
+		Email:        input.Email,
+		PasswordHash: string(hashedPw),
+	}
+
+	user, err := u.DB.CreateUser(ctx, registeredUser)
+	if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
+		return db.User{}, echo.NewHTTPError(http.StatusConflict, err.Error())
+	}
+	if err != nil {
+		return db.User{}, echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
 	return user, nil
