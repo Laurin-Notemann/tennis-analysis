@@ -32,14 +32,6 @@ type (
 		TokenGen     utils.TokenGenerator
 	}
 
-	OK  = string
-	ERR = string
-
-	Response struct {
-		Status string
-		Res    interface{}
-	}
-
 	ResponsePayload struct {
 		AccessToken string  `json:"accessToken"`
 		User        db.User `json:"user"`
@@ -60,7 +52,7 @@ func (r AuthenticationRouter) register(ctx echo.Context) (err error) {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	err = validateUserInputAndGetJwt(*registerInput)
+	err = r.validateUserInputAndGetJwt(*registerInput)
 	if err != nil {
 		return err
 	}
@@ -108,7 +100,6 @@ func (r AuthenticationRouter) refresh(ctx echo.Context) (err error) {
 		return err
 	}
 
-	// create new refresh token
 	args := handler.TokenHandlerInput{
 		UserId:   user.ID,
 		Username: user.Username,
@@ -129,7 +120,7 @@ func RegisterAuthRoute(baseUrl string, e *echo.Echo, r AuthenticationRouter) {
 	e.POST(baseUrl+"/refresh", r.refresh)
 }
 
-func validateUserInputAndGetJwt(input RegisterInput) error {
+func (r *AuthenticationRouter)validateUserInputAndGetJwt(input RegisterInput) error {
 	if input.Username == "" || input.Email == "" || input.Confirm == "" || input.Password == "" {
 		return echo.NewHTTPError(http.StatusBadRequest, "Missing inputs.")
 	}
