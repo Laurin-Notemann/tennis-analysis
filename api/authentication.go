@@ -60,31 +60,11 @@ func (r AuthenticationRouter) register(ctx echo.Context) (err error) {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	err = validateUserInputAndGetJwt(
-		*registerInput,
-	)
+	err = validateUserInputAndGetJwt(*registerInput)
 	if err != nil {
 		return err
 	}
-
-	userInput := handler.CreateUserInput{
-		Username: registerInput.Username,
-		Email:    registerInput.Email,
-		Password: registerInput.Password,
-	}
-	newUser, err := r.UserHandler.CreateUser(ctx.Request().Context(), userInput)
-	if err != nil {
-		return err
-	}
-
-	user, err := r.TokenHandler.CreateTokenAndReturnUser(
-		ctx.Request().Context(),
-		handler.TokenHandlerInput{
-			UserId:   newUser.ID,
-			Username: newUser.Username,
-			Email:    newUser.Email,
-		},
-	)
+	user, err := r.createUserAndToken(ctx, *registerInput)
 	if err != nil {
 		return err
 	}
@@ -231,4 +211,30 @@ func (r *AuthenticationRouter) validateRefreshToken(ctx echo.Context, user db.Us
 	} else {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
+}
+
+func (r *AuthenticationRouter) createUserAndToken(ctx echo.Context, registerInput RegisterInput) (db.User, error) {
+	userInput := handler.CreateUserInput{
+		Username: registerInput.Username,
+		Email:    registerInput.Email,
+		Password: registerInput.Password,
+	}
+	newUser, err := r.UserHandler.CreateUser(ctx.Request().Context(), userInput)
+	if err != nil {
+		return db.User{}, err
+	}
+
+	user, err := r.TokenHandler.CreateTokenAndReturnUser(
+		ctx.Request().Context(),
+		handler.TokenHandlerInput{
+			UserId:   newUser.ID,
+			Username: newUser.Username,
+			Email:    newUser.Email,
+		},
+	)
+	if err != nil {
+		return db.User{}, err
+	}
+
+	return user, nil
 }
