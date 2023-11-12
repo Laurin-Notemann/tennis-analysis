@@ -102,7 +102,7 @@ func (h *RefreshTokenHandler) UpdateTokenByUserId(ctx context.Context, input Tok
 	return token, nil
 }
 
-func (h *RefreshTokenHandler) DeleteTokenById(ctx context.Context, userId uuid.UUID) error {
+func (h *RefreshTokenHandler) DeleteTokenByUserId(ctx context.Context, userId uuid.UUID) error {
 	err := h.DB.DeleteTokenByUserId(ctx, userId)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())

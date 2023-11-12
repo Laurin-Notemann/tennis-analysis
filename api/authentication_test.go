@@ -15,6 +15,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type TestRegisterInput struct {
@@ -173,7 +174,7 @@ func TestRegisterRoute(t *testing.T) {
 
 	successAddToDb := 0
 	for _, input := range testUserInputData {
-		t.Run("register:  "+input.user.Username, func(t *testing.T) {
+		t.Run("/api/register:  "+input.user.Username, func(t *testing.T) {
 			encodeUser, err := json.Marshal(input.user)
 			if err != nil {
 				t.Fatalf("Problem with encoding user %v", err)
@@ -323,7 +324,7 @@ func TestRefreshRoute(t *testing.T) {
 	}
 
 	for _, data := range testInputData {
-		t.Run("/refresh "+data.name, func(t *testing.T) {
+		t.Run("/api/refresh "+data.name, func(t *testing.T) {
 
 			err, rec, registeredUser, req := refreshUser(t, e, userInput, data.durations.access, data.durations.refresh)
 
@@ -356,6 +357,110 @@ func TestRefreshRoute(t *testing.T) {
 				}
 			}
 			_, err = userHandler.DeleteUserById(req.Context(), registeredUser.User.ID)
+			assert.NoError(t, err)
+		})
+	}
+}
+
+type LoginInputTest struct {
+	name      string
+	error     TestError
+	userInput LoginInput
+	durations TokenDuration
+}
+
+func TestLoginRoute(t *testing.T) {
+	e := echo.New()
+
+	userInput := RegisterInput{
+		Username: "laurin",
+		Email:    "laurin@test.de",
+		Password: "Test",
+		Confirm:  "Test",
+	}
+	testDataLogin := []LoginInputTest{
+		{
+			name: "correct login with username",
+			error: TestError{
+				isError:       false,
+				expectedError: nil,
+			},
+			userInput: LoginInput{
+				UsernameOrEmail: "laurin",
+				Password:        "Test",
+			},
+			durations: TokenDuration{
+				access:  5 * time.Minute,
+				refresh: 5 * time.Minute,
+			},
+		},
+		{
+			name: "correct login with email",
+			error: TestError{
+				isError:       false,
+				expectedError: nil,
+			},
+			userInput: LoginInput{
+				UsernameOrEmail: "laurin@test.de",
+				Password:        "Test",
+			},
+			durations: TokenDuration{
+				access:  5 * time.Minute,
+				refresh: 5 * time.Minute,
+			},
+		},
+		{
+			name: "wrong login with missmatched pw",
+			error: TestError{
+				isError: true,
+				expectedError: &echo.HTTPError{
+					Code:     http.StatusBadRequest,
+					Message:  bcrypt.ErrMismatchedHashAndPassword.Error(),
+					Internal: error(nil),
+				},
+			},
+			userInput: LoginInput{
+				UsernameOrEmail: "laurin",
+				Password:        "TestWrong",
+			},
+			durations: TokenDuration{
+				access:  5 * time.Minute,
+				refresh: 5 * time.Minute,
+			},
+		},
+	}
+
+	for _, data := range testDataLogin {
+		t.Run("/api/login", func(t *testing.T) {
+			user := registerNewUser(t, e, userInput, data.durations.access, data.durations.refresh)
+
+			encodeLoginReq, err := json.Marshal(LoginInput{UsernameOrEmail: data.userInput.UsernameOrEmail, Password: data.userInput.Password})
+			assert.NoError(t, err)
+
+			req := httptest.NewRequest(http.MethodPost, "/api/login", strings.NewReader(string(encodeLoginReq)))
+			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+			rec := httptest.NewRecorder()
+			c := e.NewContext(req, rec)
+			err = authRouter.login(c)
+
+			if data.error.isError {
+				if assert.Error(t, err) {
+					assert.Equal(t, data.error.expectedError.Error(), err.Error())
+				}
+			} else {
+				if assert.NoError(t, err) {
+					loggedInUser := new(ResponsePayload)
+					err := json.Unmarshal(rec.Body.Bytes(), loggedInUser)
+					assert.NoError(t, err, "Couldn't decode User")
+
+					assert.NotEqual(t, user, loggedInUser)
+					assert.Equal(t, user.User.ID, loggedInUser.User.ID)
+					assert.Equal(t, user.User.Username, loggedInUser.User.Username)
+					assert.Equal(t, user.User.Email, loggedInUser.User.Email)
+					assert.NotEqual(t, user.User.RefreshTokenID, loggedInUser.User.RefreshTokenID)
+				}
+			}
+			_, err = userHandler.DeleteUserById(req.Context(), user.User.ID)
 			assert.NoError(t, err)
 		})
 	}

@@ -3,10 +3,12 @@ package api
 import (
 	"errors"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
+	"golang.org/x/crypto/bcrypt"
 
 	"github.com/Laurin-Notemann/tennis-analysis/db"
 	"github.com/Laurin-Notemann/tennis-analysis/handler"
@@ -24,6 +26,11 @@ type (
 		Email    string `json:"email"`
 		Password string `json:"password"`
 		Confirm  string `json:"confirm"`
+	}
+
+	LoginInput struct {
+		UsernameOrEmail string `json:"usernameOrEmail"`
+		Password        string `json:"password"`
 	}
 
 	AuthenticationRouter struct {
@@ -114,13 +121,49 @@ func (r AuthenticationRouter) refresh(ctx echo.Context) (err error) {
 	return ctx.JSON(http.StatusOK, payload)
 }
 
+func (r AuthenticationRouter) login(ctx echo.Context) (err error) {
+	loginReq := new(LoginInput)
+	if err = ctx.Bind(loginReq); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	var user db.User
+	if strings.Contains(loginReq.UsernameOrEmail, "@") {
+		user, err = r.UserHandler.GetUserByEmail(ctx.Request().Context(), loginReq.UsernameOrEmail)
+	} else {
+		user, err = r.UserHandler.GetUserByUsername(ctx.Request().Context(), loginReq.UsernameOrEmail)
+	}
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(loginReq.Password))
+	if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	} else if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	user, err = r.loginRefreshToken(ctx, &user)
+
+	accessToken, err := r.genAccessToken(&user)
+
+	payload := ResponsePayload{
+		AccessToken: accessToken,
+		User:        user,
+	}
+
+	return ctx.JSON(http.StatusOK, payload)
+}
+
 func RegisterAuthRoute(baseUrl string, e *echo.Echo, r AuthenticationRouter) {
 
 	e.POST(baseUrl+"/register", r.register)
 	e.POST(baseUrl+"/refresh", r.refresh)
+	e.POST(baseUrl+"/login", r.login)
 }
 
-func (r *AuthenticationRouter)validateUserInputAndGetJwt(input RegisterInput) error {
+func (r *AuthenticationRouter) validateUserInputAndGetJwt(input RegisterInput) error {
 	if input.Username == "" || input.Email == "" || input.Confirm == "" || input.Password == "" {
 		return echo.NewHTTPError(http.StatusBadRequest, "Missing inputs.")
 	}
@@ -131,7 +174,6 @@ func (r *AuthenticationRouter)validateUserInputAndGetJwt(input RegisterInput) er
 }
 
 func (r *AuthenticationRouter) validateAccessToken(accessToken string, valid *jwt.Token, user db.User) (ResponsePayload, error) {
-	// if accesstoken available return token and user
 	if !valid.Valid {
 		return ResponsePayload{}, AccessTokenInvalid
 	}
@@ -143,7 +185,6 @@ func (r *AuthenticationRouter) validateAccessToken(accessToken string, valid *jw
 }
 
 func (r *AuthenticationRouter) parseTokenGetUser(accessToken string, ctx echo.Context) (db.User, *jwt.Token, error) {
-	// Check if accesstoken is still available
 	validAccessToken, err := jwt.ParseWithClaims(accessToken, &utils.CustomTokenClaim{}, func(t *jwt.Token) (interface{}, error) {
 		return []byte(r.UserHandler.Env.JWT.AccessToken), nil
 	})
@@ -196,14 +237,7 @@ func (r *AuthenticationRouter) createUserAndToken(ctx echo.Context, registerInpu
 		return db.User{}, err
 	}
 
-	user, err := r.TokenHandler.CreateTokenAndReturnUser(
-		ctx.Request().Context(),
-		handler.TokenHandlerInput{
-			UserId:   newUser.ID,
-			Username: newUser.Username,
-			Email:    newUser.Email,
-		},
-	)
+	user, err := r.genRefreshToken(ctx, &newUser)
 	if err != nil {
 		return db.User{}, err
 	}
@@ -227,4 +261,29 @@ func (r *AuthenticationRouter) genAccessToken(user *db.User) (string, error) {
 	}
 
 	return signedAccessToken, nil
+}
+
+func (r *AuthenticationRouter) genRefreshToken(ctx echo.Context, user *db.User) (db.User, error) {
+	updatedUser, err := r.TokenHandler.CreateTokenAndReturnUser(
+		ctx.Request().Context(),
+		handler.TokenHandlerInput{
+			UserId:   user.ID,
+			Username: user.Username,
+			Email:    user.Email,
+		},
+	)
+	if err != nil {
+		return db.User{}, err
+	}
+	return updatedUser, nil
+}
+
+func (r *AuthenticationRouter) loginRefreshToken(ctx echo.Context, user *db.User) (db.User, error) {
+	err := r.TokenHandler.DeleteTokenByUserId(ctx.Request().Context(), user.ID)
+	if err != nil {
+		return db.User{}, err
+	}
+
+	refUser, err := r.genRefreshToken(ctx, user)
+	return refUser, err
 }
