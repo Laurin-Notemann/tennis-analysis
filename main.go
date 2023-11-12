@@ -49,10 +49,12 @@ func main() {
 	tokenGen := utils.ProdTokenGenerator{}
 	userHandler := handler.NewUserHandler(dbQueries, cfg)
 	tokenHandler := handler.NewRefreshTokenHandler(dbQueries, cfg, &tokenGen)
+	authHanlder := handler.NewAuthenticationHandler(dbQueries, *userHandler, *tokenHandler, &tokenGen)
 
 	resourceHandler := handler.ResourceHandlers{
 		UserHandler:  *userHandler,
 		TokenHandler: *tokenHandler,
+    AuthHandler: *authHanlder,
 	}
 
 	server := api.NewApi(ctx, resourceHandler, &tokenGen)

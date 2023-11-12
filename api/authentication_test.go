@@ -20,7 +20,7 @@ import (
 
 type TestRegisterInput struct {
 	error TestError
-	user  RegisterInput
+	user  handler.RegisterInput
 }
 
 type TestError struct {
@@ -42,8 +42,9 @@ var cfg = config.Config{
 var tokeGen = utils.MockTokenGenerator{CallOut: 0}
 var userHandler = handler.NewUserHandler(utils.DbQueriesTest(), cfg)
 var tokenHandler = handler.NewRefreshTokenHandler(utils.DbQueriesTest(), cfg, &tokeGen)
+var authHandler = handler.NewAuthenticationHandler(utils.DbQueriesTest(), *userHandler, *tokenHandler, &tokeGen)
 
-var authRouter = newAuthRouter(*userHandler, *tokenHandler, &tokeGen)
+var authRouter = newAuthRouter(*userHandler, *tokenHandler, &tokeGen, *authHandler)
 
 func TestRegisterRoute(t *testing.T) {
 	testUserInputData := []TestRegisterInput{
@@ -52,7 +53,7 @@ func TestRegisterRoute(t *testing.T) {
 				isError:       false,
 				expectedError: nil,
 			},
-			user: RegisterInput{
+			user: handler.RegisterInput{
 				Username: "laurin",
 				Email:    "laurin@test.de",
 				Password: "Test",
@@ -68,7 +69,7 @@ func TestRegisterRoute(t *testing.T) {
 					Internal: error(nil),
 				},
 			},
-			user: RegisterInput{
+			user: handler.RegisterInput{
 				Username: "lennart",
 				Email:    "lennart@test.de",
 				Password: "Test",
@@ -84,7 +85,7 @@ func TestRegisterRoute(t *testing.T) {
 					Internal: error(nil),
 				},
 			},
-			user: RegisterInput{
+			user: handler.RegisterInput{
 				Username: "laurin",
 				Email:    "laurin@test.de",
 				Password: "Test",
@@ -100,7 +101,7 @@ func TestRegisterRoute(t *testing.T) {
 					Internal: error(nil),
 				},
 			},
-			user: RegisterInput{
+			user: handler.RegisterInput{
 				Username: "laulau",
 				Email:    "laurin@test.de",
 				Password: "Test",
@@ -116,7 +117,7 @@ func TestRegisterRoute(t *testing.T) {
 					Internal: error(nil),
 				},
 			},
-			user: RegisterInput{
+			user: handler.RegisterInput{
 				Username: "tim",
 				Password: "Test",
 				Confirm:  "Test",
@@ -131,7 +132,7 @@ func TestRegisterRoute(t *testing.T) {
 					Internal: error(nil),
 				},
 			},
-			user: RegisterInput{
+			user: handler.RegisterInput{
 				Username: "tim",
 				Email:    "tim@test.de",
 				Password: "Test",
@@ -146,7 +147,7 @@ func TestRegisterRoute(t *testing.T) {
 					Internal: error(nil),
 				},
 			},
-			user: RegisterInput{
+			user: handler.RegisterInput{
 				Username: "tim",
 				Email:    "tim@test.de",
 				Confirm:  "Test",
@@ -161,7 +162,7 @@ func TestRegisterRoute(t *testing.T) {
 					Internal: error(nil),
 				},
 			},
-			user: RegisterInput{
+			user: handler.RegisterInput{
 				Username: "",
 				Email:    "tim@test.de",
 				Confirm:  "Test",
@@ -223,7 +224,7 @@ func TestRegisterRoute(t *testing.T) {
 			} else {
 				if assert.NoError(t, err) {
 					successAddToDb++
-					userRes := new(ResponsePayload)
+					userRes := new(handler.ResponsePayload)
 					err := json.Unmarshal(rec.Body.Bytes(), userRes)
 					if err != nil {
 						t.Fatalf("Couldn't decode User %v", err)
@@ -269,7 +270,7 @@ type TokenDuration struct {
 func TestRefreshRoute(t *testing.T) {
 	e := echo.New()
 
-	userInput := RegisterInput{
+	userInput := handler.RegisterInput{
 		Username: "laurin",
 		Email:    "laurin@test.de",
 		Password: "Test",
@@ -334,7 +335,7 @@ func TestRefreshRoute(t *testing.T) {
 				}
 			} else if !data.validation.vaildAccess && data.validation.validRefresh {
 				if assert.NoError(t, err) {
-					refreshedUser := new(ResponsePayload)
+					refreshedUser := new(handler.ResponsePayload)
 
 					err := json.Unmarshal(rec.Body.Bytes(), refreshedUser)
 					if err != nil {
@@ -346,7 +347,7 @@ func TestRefreshRoute(t *testing.T) {
 				}
 			} else if data.validation.vaildAccess && data.validation.validRefresh {
 				if assert.NoError(t, err) {
-					refreshedUser := new(ResponsePayload)
+					refreshedUser := new(handler.ResponsePayload)
 
 					err := json.Unmarshal(rec.Body.Bytes(), refreshedUser)
 					if err != nil {
@@ -365,14 +366,14 @@ func TestRefreshRoute(t *testing.T) {
 type LoginInputTest struct {
 	name      string
 	error     TestError
-	userInput LoginInput
+	userInput handler.LoginInput
 	durations TokenDuration
 }
 
 func TestLoginRoute(t *testing.T) {
 	e := echo.New()
 
-	userInput := RegisterInput{
+	userInput := handler.RegisterInput{
 		Username: "laurin",
 		Email:    "laurin@test.de",
 		Password: "Test",
@@ -385,7 +386,7 @@ func TestLoginRoute(t *testing.T) {
 				isError:       false,
 				expectedError: nil,
 			},
-			userInput: LoginInput{
+			userInput: handler.LoginInput{
 				UsernameOrEmail: "laurin",
 				Password:        "Test",
 			},
@@ -400,7 +401,7 @@ func TestLoginRoute(t *testing.T) {
 				isError:       false,
 				expectedError: nil,
 			},
-			userInput: LoginInput{
+			userInput: handler.LoginInput{
 				UsernameOrEmail: "laurin@test.de",
 				Password:        "Test",
 			},
@@ -419,7 +420,7 @@ func TestLoginRoute(t *testing.T) {
 					Internal: error(nil),
 				},
 			},
-			userInput: LoginInput{
+			userInput: handler.LoginInput{
 				UsernameOrEmail: "laurin",
 				Password:        "TestWrong",
 			},
@@ -434,7 +435,7 @@ func TestLoginRoute(t *testing.T) {
 		t.Run("/api/login", func(t *testing.T) {
 			user := registerNewUser(t, e, userInput, data.durations.access, data.durations.refresh)
 
-			encodeLoginReq, err := json.Marshal(LoginInput{UsernameOrEmail: data.userInput.UsernameOrEmail, Password: data.userInput.Password})
+			encodeLoginReq, err := json.Marshal(handler.LoginInput{UsernameOrEmail: data.userInput.UsernameOrEmail, Password: data.userInput.Password})
 			assert.NoError(t, err)
 
 			req := httptest.NewRequest(http.MethodPost, "/api/login", strings.NewReader(string(encodeLoginReq)))
@@ -449,7 +450,7 @@ func TestLoginRoute(t *testing.T) {
 				}
 			} else {
 				if assert.NoError(t, err) {
-					loggedInUser := new(ResponsePayload)
+					loggedInUser := new(handler.ResponsePayload)
 					err := json.Unmarshal(rec.Body.Bytes(), loggedInUser)
 					assert.NoError(t, err, "Couldn't decode User")
 
@@ -467,7 +468,7 @@ func TestLoginRoute(t *testing.T) {
 
 }
 
-func registerNewUser(t *testing.T, e *echo.Echo, userData RegisterInput, durAcc time.Duration, durRef time.Duration) *ResponsePayload {
+func registerNewUser(t *testing.T, e *echo.Echo, userData handler.RegisterInput, durAcc time.Duration, durRef time.Duration) *handler.ResponsePayload {
 	encodeUser, err := json.Marshal(userData)
 	if err != nil {
 		t.Fatalf("Problem with encoding user %v", err)
@@ -483,7 +484,7 @@ func registerNewUser(t *testing.T, e *echo.Echo, userData RegisterInput, durAcc 
 	err = authRouter.register(c)
 	assert.NoError(t, err)
 
-	user := new(ResponsePayload)
+	user := new(handler.ResponsePayload)
 	err = json.Unmarshal(rec.Body.Bytes(), user)
 	if err != nil {
 		t.Fatalf("Couldn't decode User %v", err)
@@ -495,13 +496,13 @@ func registerNewUser(t *testing.T, e *echo.Echo, userData RegisterInput, durAcc 
 func refreshUser(
 	t *testing.T,
 	e *echo.Echo,
-	userInput RegisterInput,
+	userInput handler.RegisterInput,
 	durAcc time.Duration,
 	durRef time.Duration,
-) (error, *httptest.ResponseRecorder, *ResponsePayload, *http.Request) {
+) (error, *httptest.ResponseRecorder, *handler.ResponsePayload, *http.Request) {
 	user := registerNewUser(t, e, userInput, durAcc, durRef)
 
-	encodeRefreshReq, err := json.Marshal(RefreshReq{AccessToken: user.AccessToken})
+	encodeRefreshReq, err := json.Marshal(handler.RefreshReq{AccessToken: user.AccessToken})
 	assert.NoError(t, err)
 
 	if durAcc == time.Duration(0) {
