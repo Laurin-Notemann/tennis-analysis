@@ -2,7 +2,6 @@ package api
 
 import (
 	"errors"
-	"log"
 	"net/http"
 	"time"
 
@@ -128,28 +127,9 @@ func (r AuthenticationRouter) refresh(ctx echo.Context) (err error) {
 		return ctx.JSON(http.StatusOK, payload)
 	}
 
-	// if not check if refreshtoken is still valid
-	refreshTokenObj, err := r.TokenHandler.GetTokenByUserId(ctx.Request().Context(), user.ID)
+	err = r.validateRefreshToken(ctx, user)
 	if err != nil {
 		return err
-	}
-
-	refreshToken := refreshTokenObj.Token
-
-	validRefreshToken, err := jwt.ParseWithClaims(refreshToken, &utils.CustomTokenClaim{}, func(t *jwt.Token) (interface{}, error) {
-		return []byte(r.UserHandler.Env.JWT.RefreshToken), nil
-	})
-	_, ok := validRefreshToken.Claims.(*utils.CustomTokenClaim)
-	if !ok {
-		return echo.NewHTTPError(http.StatusInternalServerError, "Couldn't parse claim.")
-	}
-
-	if validRefreshToken.Valid {
-		log.Println("User still logged in")
-	} else if errors.Is(err, jwt.ErrTokenExpired) {
-		return echo.NewHTTPError(http.StatusUnauthorized, err.Error())
-	} else {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
 	// if valid create new access Token
@@ -227,4 +207,28 @@ func (r *AuthenticationRouter) parseTokenGetUser(accessToken string, ctx echo.Co
 	}
 
 	return user, validAccessToken, err
+}
+
+func (r *AuthenticationRouter) validateRefreshToken(ctx echo.Context, user db.User) error {
+	refreshTokenObj, err := r.TokenHandler.GetTokenByUserId(ctx.Request().Context(), user.ID)
+	if err != nil {
+		return err
+	}
+
+	refreshToken := refreshTokenObj.Token
+	validRefreshToken, err := jwt.ParseWithClaims(refreshToken, &utils.CustomTokenClaim{}, func(t *jwt.Token) (interface{}, error) {
+		return []byte(r.UserHandler.Env.JWT.RefreshToken), nil
+	})
+	_, ok := validRefreshToken.Claims.(*utils.CustomTokenClaim)
+	if !ok {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Couldn't parse claim.")
+	}
+
+	if validRefreshToken.Valid {
+		return nil
+	} else if errors.Is(err, jwt.ErrTokenExpired) {
+		return echo.NewHTTPError(http.StatusUnauthorized, err.Error())
+	} else {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
 }
