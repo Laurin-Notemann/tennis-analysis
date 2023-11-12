@@ -28,6 +28,7 @@ type (
 	AuthenticationRouter struct {
 		UserHandler  handler.UserHandler
 		TokenHandler handler.RefreshTokenHandler
+		TokenGen     utils.TokenGenerator
 	}
 
 	OK  = string
@@ -44,8 +45,12 @@ type (
 	}
 )
 
-func newAuthRouter(h handler.UserHandler, t handler.RefreshTokenHandler) *AuthenticationRouter {
-	return &AuthenticationRouter{UserHandler: h, TokenHandler: t}
+func newAuthRouter(
+	h handler.UserHandler,
+	t handler.RefreshTokenHandler,
+	tg utils.TokenGenerator,
+) *AuthenticationRouter {
+	return &AuthenticationRouter{UserHandler: h, TokenHandler: t, TokenGen: tg}
 }
 
 func (r AuthenticationRouter) register(ctx echo.Context) (err error) {
@@ -77,10 +82,22 @@ func (r AuthenticationRouter) register(ctx echo.Context) (err error) {
 			UserId:   newUser.ID,
 			Username: newUser.Username,
 			Email:    newUser.Email,
-		})
+		},
+	)
+	if err != nil {
+		return err
+	}
 
 	expiryDate := time.Now().Add(utils.OneDay)
-	signedAccessToken, err := utils.GenerateNewJwtToken(user.ID, user.Username, user.Email, expiryDate, r.UserHandler.Env.JWT.AccessToken)
+	tokeGenInput := utils.TokenGenInput{
+		UserId:        user.ID,
+		Username:      user.Username,
+		Email:         user.Email,
+		ExpiryDate:    expiryDate,
+		SigningKey:    r.UserHandler.Env.JWT.AccessToken,
+		IsAccessToken: true,
+	}
+	signedAccessToken, err := r.TokenGen.GenerateNewJwtToken(tokeGenInput)
 	if err != nil {
 		return err
 	}
@@ -113,6 +130,7 @@ func (r AuthenticationRouter) refresh(ctx echo.Context) (err error) {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
+
 	// if accesstoken available return token and user
 	if okAcc && validAccessToken.Valid {
 		payload := ResponsePayload{
@@ -139,11 +157,7 @@ func (r AuthenticationRouter) refresh(ctx echo.Context) (err error) {
 
 	if validRefreshToken.Valid {
 		log.Println("User still logged in")
-	} else if errors.Is(err, jwt.ErrTokenMalformed) {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
-	} else if errors.Is(err, jwt.ErrTokenSignatureInvalid) {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
-	} else if errors.Is(err, jwt.ErrTokenExpired) || errors.Is(err, jwt.ErrTokenNotValidYet) {
+	} else if errors.Is(err, jwt.ErrTokenExpired) {
 		return echo.NewHTTPError(http.StatusUnauthorized, err.Error())
 	} else {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
@@ -151,7 +165,15 @@ func (r AuthenticationRouter) refresh(ctx echo.Context) (err error) {
 
 	// if valid create new access Token
 	expiryDate := time.Now().Add(utils.OneDay)
-	accessToken, err = utils.GenerateNewJwtToken(user.ID, user.Username, user.Email, expiryDate, r.UserHandler.Env.JWT.AccessToken)
+	tokeGenInput := utils.TokenGenInput{
+		UserId:        user.ID,
+		Username:      user.Username,
+		Email:         user.Email,
+		ExpiryDate:    expiryDate,
+		SigningKey:    r.UserHandler.Env.JWT.AccessToken,
+		IsAccessToken: true,
+	}
+	accessToken, err = r.TokenGen.GenerateNewJwtToken(tokeGenInput)
 	if err != nil {
 		return err
 	}

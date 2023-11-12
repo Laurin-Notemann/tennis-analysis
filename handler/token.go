@@ -13,14 +13,20 @@ import (
 )
 
 type RefreshTokenHandler struct {
-	DB  db.Querier
-	Env config.Config
+	DB       db.Querier
+	TokenGen utils.TokenGenerator
+	Env      config.Config
 }
 
-func NewRefreshTokenHandler(DBTX *db.Queries, env config.Config) *RefreshTokenHandler {
+func NewRefreshTokenHandler(
+	DBTX *db.Queries,
+	env config.Config,
+	tokenGen utils.TokenGenerator,
+) *RefreshTokenHandler {
 	return &RefreshTokenHandler{
-		DB:  DBTX,
-		Env: env,
+		DB:       DBTX,
+		Env:      env,
+		TokenGen: tokenGen,
 	}
 }
 
@@ -32,19 +38,21 @@ type TokenHandlerInput struct {
 
 func (h *RefreshTokenHandler) CreateTokenAndReturnUser(ctx context.Context, input TokenHandlerInput) (db.User, error) {
 	duration := time.Now().Add(utils.OneMonth)
-	signedAccessToken, err := utils.GenerateNewJwtToken(
-		input.UserId,
-		input.Username,
-		input.Email,
-		duration,
-		h.Env.JWT.RefreshToken,
-	)
+	tokeGenInput := utils.TokenGenInput{
+		UserId:        input.UserId,
+		Username:      input.Username,
+		Email:         input.Email,
+		ExpiryDate:    duration,
+		SigningKey:    h.Env.JWT.RefreshToken,
+		IsAccessToken: false,
+	}
+	signedRefreshToken, err := h.TokenGen.GenerateNewJwtToken(tokeGenInput)
 	if err != nil {
 		return db.User{}, err
 	}
 
 	createRefreshToken := db.CreateTokenParams{
-		Token:      signedAccessToken,
+		Token:      signedRefreshToken,
 		ExpiryDate: duration,
 		UserID:     input.UserId,
 	}
@@ -67,19 +75,21 @@ func (h *RefreshTokenHandler) GetTokenByUserId(ctx context.Context, userId uuid.
 
 func (h *RefreshTokenHandler) UpdateTokenByUserId(ctx context.Context, input TokenHandlerInput) (db.RefreshToken, error) {
 	duration := time.Now().Add(utils.OneMonth)
-	signedAccessToken, err := utils.GenerateNewJwtToken(
-		input.UserId,
-		input.Username,
-		input.Email,
-		duration,
-		h.Env.JWT.RefreshToken,
-	)
+	tokeGenInput := utils.TokenGenInput{
+		UserId:        input.UserId,
+		Username:      input.Username,
+		Email:         input.Email,
+		ExpiryDate:    duration,
+		SigningKey:    h.Env.JWT.RefreshToken,
+		IsAccessToken: false,
+	}
+	signedRefreshToken, err := h.TokenGen.GenerateNewJwtToken(tokeGenInput)
 	if err != nil {
 		return db.RefreshToken{}, err
 	}
 
 	updatedRefreshToken := db.UpdateTokenByUserIdParams{
-		Token:      signedAccessToken,
+		Token:      signedRefreshToken,
 		ExpiryDate: duration,
 		UserID:     input.UserId,
 	}
