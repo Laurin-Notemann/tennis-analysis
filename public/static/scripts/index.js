@@ -15,14 +15,19 @@ async function doSomething() {
       e.preventDefault()
 
       const token = localStorage.getItem("access-token")
-      const res = await fetch("/api/user/" + userId, {
+      const res = await fetch("/api/users/" + userId, {
         headers: {
           Authorization: "Bearer " + token
         }
       })
 
       console.log(res)
-      console.log(await res.json())
+      console.log(res.body)
+      try {
+        console.log(await res.json())
+      } catch (e) {
+        console.log(e)
+      }
     })
   } else {
     const err = document.createElement("p")
