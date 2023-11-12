@@ -14,6 +14,8 @@ import (
 	"github.com/Laurin-Notemann/tennis-analysis/utils"
 )
 
+var AccessTokenInvalid = errors.New("Access token is invalid")
+
 type (
 	RefreshReq struct {
 		AccessToken string `json:"accessToken"`
@@ -114,31 +116,18 @@ func (r AuthenticationRouter) refresh(ctx echo.Context) (err error) {
 	if err = ctx.Bind(req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
-
-	// Check if accesstoken is still available
 	accessToken := req.AccessToken
-	validAccessToken, err := jwt.ParseWithClaims(accessToken, &utils.CustomTokenClaim{}, func(t *jwt.Token) (interface{}, error) {
-		return []byte(r.UserHandler.Env.JWT.AccessToken), nil
-	})
 
-	accessTokenClaim, okAcc := validAccessToken.Claims.(*utils.CustomTokenClaim)
-	if !okAcc {
-		return echo.NewHTTPError(http.StatusInternalServerError, "Couldn't parse claim")
-	}
-
-	user, err := r.UserHandler.GetUserById(ctx.Request().Context(), accessTokenClaim.UserID)
+	user, validToken, err := r.parseTokenGetUser(accessToken, ctx)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
-	// if accesstoken available return token and user
-	if okAcc && validAccessToken.Valid {
-		payload := ResponsePayload{
-			AccessToken: accessToken,
-			User:        user,
-		}
+	payload, err := r.validateAccessToken(accessToken, validToken, user)
+	if !errors.Is(err, AccessTokenInvalid) {
 		return ctx.JSON(http.StatusOK, payload)
 	}
+
 	// if not check if refreshtoken is still valid
 	refreshTokenObj, err := r.TokenHandler.GetTokenByUserId(ctx.Request().Context(), user.ID)
 	if err != nil {
@@ -186,7 +175,7 @@ func (r AuthenticationRouter) refresh(ctx echo.Context) (err error) {
 	}
 	_, err = r.TokenHandler.UpdateTokenByUserId(ctx.Request().Context(), args)
 
-	payload := ResponsePayload{
+	payload = ResponsePayload{
 		AccessToken: accessToken,
 		User:        user,
 	}
@@ -203,10 +192,39 @@ func validateUserInputAndGetJwt(input RegisterInput) error {
 	if input.Username == "" || input.Email == "" || input.Confirm == "" || input.Password == "" {
 		return echo.NewHTTPError(http.StatusBadRequest, "Missing inputs.")
 	}
-
 	if input.Password != input.Confirm {
 		return echo.NewHTTPError(http.StatusBadRequest, "Password and confirmation do not match.")
 	}
-
 	return nil
+}
+
+func (r *AuthenticationRouter) validateAccessToken(accessToken string, valid *jwt.Token, user db.User) (ResponsePayload, error) {
+	// if accesstoken available return token and user
+	if !valid.Valid {
+		return ResponsePayload{}, AccessTokenInvalid
+	}
+	payload := ResponsePayload{
+		AccessToken: accessToken,
+		User:        user,
+	}
+	return payload, nil
+}
+
+func (r *AuthenticationRouter) parseTokenGetUser(accessToken string, ctx echo.Context) (db.User, *jwt.Token, error) {
+	// Check if accesstoken is still available
+	validAccessToken, err := jwt.ParseWithClaims(accessToken, &utils.CustomTokenClaim{}, func(t *jwt.Token) (interface{}, error) {
+		return []byte(r.UserHandler.Env.JWT.AccessToken), nil
+	})
+
+	accessTokenClaim, okAcc := validAccessToken.Claims.(*utils.CustomTokenClaim)
+	if !okAcc {
+		return db.User{}, validAccessToken, echo.NewHTTPError(http.StatusInternalServerError, "Couldn't parse claim")
+	}
+
+	user, err := r.UserHandler.GetUserById(ctx.Request().Context(), accessTokenClaim.UserID)
+	if err != nil {
+		return db.User{}, validAccessToken, echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	return user, validAccessToken, err
 }
