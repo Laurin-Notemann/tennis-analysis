@@ -58,7 +58,7 @@ func TestCreatePlayer(t *testing.T) {
 			t,
 			e,
 			http.MethodPost,
-			"api/players",
+			"/api/players",
 			string(input),
 			playRouter.CreatePlayer,
 		)

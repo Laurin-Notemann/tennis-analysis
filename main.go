@@ -50,11 +50,15 @@ func main() {
 	userHandler := handler.NewUserHandler(dbQueries, cfg)
 	tokenHandler := handler.NewRefreshTokenHandler(dbQueries, cfg, &tokenGen)
 	authHanlder := handler.NewAuthenticationHandler(dbQueries, *userHandler, *tokenHandler, &tokenGen)
+  playerHandler := handler.NewPlayerHandler(dbQueries)
+	teamHandler := handler.NewTeamHandler(dbQueries)
 
 	resourceHandler := handler.ResourceHandlers{
 		UserHandler:  *userHandler,
 		TokenHandler: *tokenHandler,
-    AuthHandler: *authHanlder,
+		AuthHandler:  *authHanlder,
+    PlayerHandler: *playerHandler,
+    TeamHandler: *teamHandler,
 	}
 
 	server := api.NewApi(ctx, resourceHandler, &tokenGen)
