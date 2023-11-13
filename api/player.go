@@ -9,9 +9,13 @@ type PlayerRouter struct {
 }
 
 func newPlayerRouter(
-  p handler.PlayerHandler,
-  t handler.TeamHandler,
-  u handler.UserHandler,
+	p handler.PlayerHandler,
+	t handler.TeamHandler,
+	u handler.UserHandler,
 ) *PlayerRouter {
 	return &PlayerRouter{PlayerHandler: p, TeamHandler: t, UserHandler: u}
+}
+
+func (r *PlayerRouter) CreatePlayer() {
+
 }
