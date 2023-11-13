@@ -11,7 +11,10 @@ import (
 
 func NewApi(ctx context.Context, resource handler.ResourceHandlers, tokenGen utils.TokenGenerator) *echo.Echo {
 	baseUrl := "/api"
-	authRouter := newAuthRouter(resource.UserHandler, resource.TokenHandler, tokenGen)
+	authRouter := newAuthRouter(resource.UserHandler, resource.TokenHandler, tokenGen, resource.AuthHandler)
+	userRouter := newUserRouter(resource.UserHandler)
+
+  customMiddleware := NewMiddleware(resource.AuthHandler)
 
 	e := echo.New()
 
@@ -20,23 +23,9 @@ func NewApi(ctx context.Context, resource handler.ResourceHandlers, tokenGen uti
 	e.Use(middleware.Recover())
 
 	RegisterAuthRoute(baseUrl, e, *authRouter)
+
+	RegisterUserRoute(baseUrl, e, *userRouter, *customMiddleware)
 	RegisterHtmlPageRoutes(e)
 
 	return e
-}
-
-type UserServerInterface interface {
-	CreateUser(ctx echo.Context) error
-}
-
-type UserServerInterfaceWrapper struct {
-	Handler UserServerInterface
-}
-
-func (w *UserServerInterfaceWrapper) CreateUser(ctx echo.Context) error {
-	var err error
-
-	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.CreateUser(ctx)
-	return err
 }
