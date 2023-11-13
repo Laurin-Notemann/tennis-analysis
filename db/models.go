@@ -13,10 +13,8 @@ import (
 
 type Game struct {
 	ID        uuid.UUID
-	Winner    *uuid.UUID
 	ServerID  uuid.UUID
 	SetID     *uuid.UUID
-	MatchID   *uuid.UUID
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
@@ -27,7 +25,6 @@ type Match struct {
 	UserID       uuid.UUID
 	TeamOne      uuid.UUID
 	TeamTwo      uuid.UUID
-	Winner       uuid.UUID
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 }
@@ -62,7 +59,6 @@ type RefreshToken struct {
 type Set struct {
 	ID        uuid.UUID
 	MatchID   uuid.UUID
-	Winner    *uuid.UUID
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
