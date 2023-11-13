@@ -470,9 +470,7 @@ func TestLoginRoute(t *testing.T) {
 
 func registerNewUser(t *testing.T, e *echo.Echo, userData handler.RegisterInput, durAcc time.Duration, durRef time.Duration) *handler.ResponsePayload {
 	encodeUser, err := json.Marshal(userData)
-	if err != nil {
-		t.Fatalf("Problem with encoding user %v", err)
-	}
+  assert.NoError(t, err, "Problem with encoding the user")
 	req := httptest.NewRequest(http.MethodPost, "/api/register", strings.NewReader(string(encodeUser)))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	rec := httptest.NewRecorder()
