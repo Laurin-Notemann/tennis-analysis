@@ -1,0 +1,10 @@
+BEGIN;
+  ALTER TABLE "games" DROP CONSTRAINT "FK_Games.winner";
+  ALTER TABLE "games" DROP COLUMN IF EXISTS "winner";
+  ALTER TABLE "sets" DROP CONSTRAINT "FK_Sets.winner";
+  ALTER TABLE "sets" DROP COLUMN IF EXISTS "winner";
+  ALTER TABLE "matches" DROP CONSTRAINT "FK_Matches.winner";
+  ALTER TABLE "matches" DROP COLUMN IF EXISTS "winner";
+  ALTER TABLE "games" DROP CONSTRAINT "FK_Games.match_id";
+  ALTER TABLE "games" DROP COLUMN IF EXISTS "match_id";
+COMMIT;
