@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"net/http"
@@ -50,13 +51,13 @@ func TestCreatePlayer(t *testing.T) {
 		assert.NoError(t, err, "Problem with encoding the user")
 
 		err, rec, _ := DummyRequest(
-      t,
-      e,
-      http.MethodPost,
-      "api/players",
-      string(input),
-      playRouter.CreatePlayer,
-    )
+			t,
+			e,
+			http.MethodPost,
+			"api/players",
+			string(input),
+			playRouter.CreatePlayer,
+		)
 		if data.error.isError {
 		} else {
 			if assert.NoError(t, err) {
@@ -69,6 +70,8 @@ func TestCreatePlayer(t *testing.T) {
 			}
 		}
 	}
+  _, err := userHandler.DeleteUserById(context.Background(), userId)
+  assert.NoError(t, err)
 }
 
 func testUser(t *testing.T, e *echo.Echo) db.User {
@@ -88,7 +91,7 @@ func DummyRequest(
 	method string,
 	url string,
 	encodedInput string,
-  routerFunc echo.HandlerFunc,
+	routerFunc echo.HandlerFunc,
 ) (err error, rec *httptest.ResponseRecorder, req *http.Request) {
 	req = httptest.NewRequest(method, url, strings.NewReader(string(encodedInput)))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
@@ -98,4 +101,3 @@ func DummyRequest(
 	err = routerFunc(c)
 	return err, rec, req
 }
-
