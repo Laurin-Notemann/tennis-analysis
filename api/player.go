@@ -44,6 +44,7 @@ func (r *PlayerRouter) CreatePlayer(ctx echo.Context) (err error) {
 		},
 		UserID: request.UserId,
 	}
+
 	team, err := r.TeamHandler.CreateTeamWithOnePlayer(ctx.Request().Context(), teamParams)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())

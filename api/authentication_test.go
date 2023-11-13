@@ -480,7 +480,7 @@ func registerNewUser(t *testing.T, e *echo.Echo, userData handler.RegisterInput,
 	tokeGen.ExpiryDateRefresh = durRef
 
 	err = authRouter.register(c)
-	assert.NoError(t, err)
+	assert.NoError(t, err, "Problem with registering test user")
 
 	user := new(handler.ResponsePayload)
 	err = json.Unmarshal(rec.Body.Bytes(), user)

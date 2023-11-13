@@ -64,7 +64,7 @@ func TestCreatePlayer(t *testing.T) {
 		)
 		if data.error.isError {
 		} else {
-			if assert.NoError(t, err) {
+			if assert.NoError(t, err, "Error with CreatePlayer route") {
 				newPlayer := new(db.Player)
 				err := json.Unmarshal(rec.Body.Bytes(), newPlayer)
 				assert.NoError(t, err, "Couldn't decode Player")

@@ -22,23 +22,17 @@ WITH new_player AS (
     $2
   )
   RETURNING id
-),
-new_team AS (
-  INSERT INTO teams (
-    name,
-    user_id,
-    player_one
-  ) VALUES (
-    $3,
-    $4,
-    (SELECT id FROM new_player)
-  )
-  RETURNING id, name, user_id, player_one, player_two, created_at, updated_at
 )
-SELECT id, name, user_id, player_one, player_two, created_at, updated_at 
-FROM teams
-WHERE teams.id = (SELECT id FROM new_team)
-LIMIT 1
+INSERT INTO teams (
+  name,
+  user_id,
+  player_one
+) VALUES (
+  $3,
+  $4,
+  (SELECT id FROM new_player)
+)
+RETURNING id, name, user_id, player_one, player_two, created_at, updated_at
 `
 
 type CreateNewTeamWithOnePlayerParams struct {
