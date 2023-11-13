@@ -12,6 +12,7 @@ import (
 
 	"github.com/Laurin-Notemann/tennis-analysis/db"
 	"github.com/Laurin-Notemann/tennis-analysis/handler"
+	"github.com/Laurin-Notemann/tennis-analysis/utils"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 )
@@ -22,7 +23,10 @@ type TestPlayerInput struct {
 	input db.CreateNewTeamWithOnePlayerParams
 }
 
-var playRouter = newPlayerRouter(userHandler)
+var testDb = utils.DbQueriesTest()
+var playerHandler = handler.NewPlayerHandler(testDb)
+var teamHandler = handler.NewTeamHandler(testDb)
+var playRouter = newPlayerRouter(*playerHandler, *teamHandler, *userHandler)
 
 func TestCreatePlayer(t *testing.T) {
 	e := echo.New()
@@ -70,8 +74,8 @@ func TestCreatePlayer(t *testing.T) {
 			}
 		}
 	}
-  _, err := userHandler.DeleteUserById(context.Background(), userId)
-  assert.NoError(t, err)
+	_, err := userHandler.DeleteUserById(context.Background(), userId)
+	assert.NoError(t, err)
 }
 
 func testUser(t *testing.T, e *echo.Echo) db.User {

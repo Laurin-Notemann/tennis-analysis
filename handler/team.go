@@ -10,8 +10,8 @@ type TeamHandler struct {
 	DB db.Querier
 }
 
-func NewTeamHandler(DB *db.Queries) *PlayerHandler {
-	return &PlayerHandler{
+func NewTeamHandler(DB *db.Queries) *TeamHandler {
+	return &TeamHandler{
 		DB: DB,
 	}
 }
