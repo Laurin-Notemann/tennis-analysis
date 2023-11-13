@@ -18,6 +18,7 @@ sql:
        - "./db/migrations/000001_initial.up.sql"
        - "./db/migrations/000002_remove-score-table.up.sql"
        - "./db/migrations/000003_add-refresh-token.up.sql"
+       - "./db/migrations/000004_add-stats.up.sql"
       gen:
         go:
             package: db

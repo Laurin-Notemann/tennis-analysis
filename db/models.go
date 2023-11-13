@@ -67,6 +67,17 @@ type Set struct {
 	UpdatedAt time.Time
 }
 
+type Stat struct {
+	ID             uuid.UUID
+	Aces           sql.NullInt32
+	DoubleFaults   sql.NullInt32
+	NetPoints      sql.NullInt32
+	Deuce          sql.NullInt32
+	PointsWonDeuce sql.NullInt32
+	GameID         *uuid.UUID
+	TeamID         *uuid.UUID
+}
+
 type Team struct {
 	ID        uuid.UUID
 	Name      sql.NullString
