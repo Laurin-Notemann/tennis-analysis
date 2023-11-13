@@ -14,6 +14,8 @@ sql:
       queries:
         - "./db/queries/users.query.sql"
         - "./db/queries/refresh_tokens.query.sql"
+        - "./db/queries/teams.query.sql"
+        - "./db/queries/players.query.sql"
       schema:
        - "./db/migrations/000001_initial.up.sql"
        - "./db/migrations/000002_remove-score-table.up.sql"

@@ -11,11 +11,16 @@ import (
 )
 
 type Querier interface {
+	CreateNewTeamWithOnePlayer(ctx context.Context, arg CreateNewTeamWithOnePlayerParams) (Team, error)
+	CreateTeamWithTwoPlayers(ctx context.Context, arg CreateTeamWithTwoPlayersParams) (Team, error)
 	CreateToken(ctx context.Context, arg CreateTokenParams) (User, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
+	DeleteTeamById(ctx context.Context, id uuid.UUID) (Team, error)
 	DeleteTokenByUserId(ctx context.Context, userID uuid.UUID) error
 	DeleteUserById(ctx context.Context, id uuid.UUID) (User, error)
 	GetAllUsers(ctx context.Context) ([]User, error)
+	GetPlayerById(ctx context.Context, id uuid.UUID) (Player, error)
+	GetTeamById(ctx context.Context, id uuid.UUID) (Team, error)
 	GetTokenByUserId(ctx context.Context, userID uuid.UUID) (RefreshToken, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserById(ctx context.Context, id uuid.UUID) (User, error)
