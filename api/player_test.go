@@ -49,6 +49,54 @@ func TestCreatePlayer(t *testing.T) {
 				UserID: userId,
 			},
 		},
+		{
+			name: "error new player",
+			error: TestError{
+				isError:       true,
+				expectedError: &echo.HTTPError{Code: 400, Message: "missing first or last name", Internal: error(nil)},
+			},
+			input: db.CreateNewTeamWithOnePlayerParams{
+				FirstName: "",
+				LastName:  "Kuech",
+				Name: sql.NullString{
+					String: "",
+					Valid:  false,
+				},
+				UserID: userId,
+			},
+		},
+		{
+			name: "error new player",
+			error: TestError{
+				isError:       true,
+				expectedError: &echo.HTTPError{Code: 400, Message: "missing first or last name", Internal: error(nil)},
+			},
+			input: db.CreateNewTeamWithOnePlayerParams{
+				FirstName: "Oskar",
+				LastName:  "",
+				Name: sql.NullString{
+					String: "",
+					Valid:  false,
+				},
+				UserID: userId,
+			},
+		},
+		{
+			name: "error new player",
+			error: TestError{
+				isError:       true,
+				expectedError: &echo.HTTPError{Code: 409, Message: "player already exists", Internal: error(nil)},
+			},
+			input: db.CreateNewTeamWithOnePlayerParams{
+				FirstName: "Oskar",
+				LastName:  "Kuech",
+				Name: sql.NullString{
+					String: "",
+					Valid:  false,
+				},
+				UserID: userId,
+			},
+		},
 	}
 	for _, data := range testCreatePlayerInput {
 		input, err := json.Marshal(data.input)
@@ -63,6 +111,9 @@ func TestCreatePlayer(t *testing.T) {
 			playRouter.CreatePlayer,
 		)
 		if data.error.isError {
+      if assert.Error(t, err) {
+        assert.Equal(t, data.error.expectedError, err)
+      }
 		} else {
 			if assert.NoError(t, err, "Error with CreatePlayer route") {
 				newPlayer := new(db.Player)
