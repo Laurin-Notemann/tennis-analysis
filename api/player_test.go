@@ -5,10 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
-	"net/http/httptest"
-	"strings"
 	"testing"
-	"time"
 
 	"github.com/Laurin-Notemann/tennis-analysis/db"
 	"github.com/Laurin-Notemann/tennis-analysis/handler"
@@ -30,14 +27,14 @@ var playRouter = newPlayerRouter(*playerHandler, *teamHandler, *userHandler)
 
 func TestCreatePlayer(t *testing.T) {
 	e := echo.New()
-	user := testUser(t, e)
+	user := DummyUser(t, e)
 	userId := user.ID
 	testCreatePlayerInput := []TestPlayerInput{
 		{
 			name: "success new player",
 			error: TestError{
-				isError:       false,
-				expectedError: nil,
+				IsError:       false,
+				ExpectedError: nil,
 			},
 			input: db.CreateNewTeamWithOnePlayerParams{
 				FirstName: "Oskar",
@@ -52,8 +49,8 @@ func TestCreatePlayer(t *testing.T) {
 		{
 			name: "error new player",
 			error: TestError{
-				isError:       true,
-				expectedError: &echo.HTTPError{Code: 400, Message: "missing first or last name", Internal: error(nil)},
+				IsError:       true,
+				ExpectedError: &echo.HTTPError{Code: 400, Message: "missing first or last name", Internal: error(nil)},
 			},
 			input: db.CreateNewTeamWithOnePlayerParams{
 				FirstName: "",
@@ -68,8 +65,8 @@ func TestCreatePlayer(t *testing.T) {
 		{
 			name: "error new player",
 			error: TestError{
-				isError:       true,
-				expectedError: &echo.HTTPError{Code: 400, Message: "missing first or last name", Internal: error(nil)},
+				IsError:       true,
+				ExpectedError: &echo.HTTPError{Code: 400, Message: "missing first or last name", Internal: error(nil)},
 			},
 			input: db.CreateNewTeamWithOnePlayerParams{
 				FirstName: "Oskar",
@@ -84,8 +81,8 @@ func TestCreatePlayer(t *testing.T) {
 		{
 			name: "error new player",
 			error: TestError{
-				isError:       true,
-				expectedError: &echo.HTTPError{Code: 409, Message: "player already exists", Internal: error(nil)},
+				IsError:       true,
+				ExpectedError: &echo.HTTPError{Code: 409, Message: "player already exists", Internal: error(nil)},
 			},
 			input: db.CreateNewTeamWithOnePlayerParams{
 				FirstName: "Oskar",
@@ -100,8 +97,8 @@ func TestCreatePlayer(t *testing.T) {
 		{
 			name: "success new player",
 			error: TestError{
-				isError:       false,
-				expectedError: nil,
+				IsError:       false,
+				ExpectedError: nil,
 			},
 			input: db.CreateNewTeamWithOnePlayerParams{
 				FirstName: "Oskar",
@@ -116,8 +113,8 @@ func TestCreatePlayer(t *testing.T) {
 		{
 			name: "success new player",
 			error: TestError{
-				isError:       false,
-				expectedError: nil,
+				IsError:       false,
+				ExpectedError: nil,
 			},
 			input: db.CreateNewTeamWithOnePlayerParams{
 				FirstName: "Laurin",
@@ -142,9 +139,9 @@ func TestCreatePlayer(t *testing.T) {
 			string(input),
 			playRouter.CreatePlayer,
 		)
-		if data.error.isError {
+		if data.error.IsError {
       if assert.Error(t, err) {
-        assert.Equal(t, data.error.expectedError, err)
+        assert.Equal(t, data.error.ExpectedError, err)
       }
 		} else {
 			if assert.NoError(t, err, "Error with CreatePlayer route") {
@@ -161,30 +158,3 @@ func TestCreatePlayer(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func testUser(t *testing.T, e *echo.Echo) db.User {
-	testUserInput := handler.RegisterInput{
-		Username: "laurin",
-		Email:    "laurin@test",
-		Password: "Test",
-		Confirm:  "Test",
-	}
-	user := registerNewUser(t, e, testUserInput, 5*time.Minute, 5*time.Minute)
-	return user.User
-}
-
-func DummyRequest(
-	t *testing.T,
-	e *echo.Echo,
-	method string,
-	url string,
-	encodedInput string,
-	routerFunc echo.HandlerFunc,
-) (err error, rec *httptest.ResponseRecorder, req *http.Request) {
-	req = httptest.NewRequest(method, url, strings.NewReader(string(encodedInput)))
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	rec = httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	err = routerFunc(c)
-	return err, rec, req
-}

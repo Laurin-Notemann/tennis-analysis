@@ -11,7 +11,7 @@ import (
 
 func NewApi(ctx context.Context, resource handler.ResourceHandlers, tokenGen utils.TokenGenerator) *echo.Echo {
 	baseUrl := "/api"
-	authRouter := newAuthRouter(resource.UserHandler, resource.TokenHandler, tokenGen, resource.AuthHandler)
+	authRouter := NewAuthRouter(resource.UserHandler, resource.TokenHandler, tokenGen, resource.AuthHandler)
 	userRouter := newUserRouter(resource.UserHandler)
 	playerRouter := newPlayerRouter(resource.PlayerHandler, resource.TeamHandler, resource.UserHandler)
 
