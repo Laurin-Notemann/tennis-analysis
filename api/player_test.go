@@ -97,6 +97,38 @@ func TestCreatePlayer(t *testing.T) {
 				UserID: userId,
 			},
 		},
+		{
+			name: "success new player",
+			error: TestError{
+				isError:       false,
+				expectedError: nil,
+			},
+			input: db.CreateNewTeamWithOnePlayerParams{
+				FirstName: "Oskar",
+				LastName:  "Test",
+				Name: sql.NullString{
+					String: "",
+					Valid:  false,
+				},
+				UserID: userId,
+			},
+		},
+		{
+			name: "success new player",
+			error: TestError{
+				isError:       false,
+				expectedError: nil,
+			},
+			input: db.CreateNewTeamWithOnePlayerParams{
+				FirstName: "Laurin",
+				LastName:  "Test",
+				Name: sql.NullString{
+					String: "",
+					Valid:  false,
+				},
+				UserID: userId,
+			},
+		},
 	}
 	for _, data := range testCreatePlayerInput {
 		input, err := json.Marshal(data.input)
