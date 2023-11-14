@@ -209,10 +209,10 @@ func TestGetAllPlayersByUserId(t *testing.T) {
 			err, rec, _ := DummyRequest(
 				t,
 				e,
-				http.MethodPost,
+				http.MethodGet,
 				"/api/players",
 				string(""),
-				playRouter.GetAllPlayerById,
+				playRouter.GetAllPlayersByUserId,
 			)
 			if data.error.IsError {
 				if assert.Error(t, err) {
@@ -222,7 +222,7 @@ func TestGetAllPlayersByUserId(t *testing.T) {
 				if assert.NoError(t, err, "Error with CreatePlayer route") {
 					allPlayers := new([]db.Player)
 					err := json.Unmarshal(rec.Body.Bytes(), allPlayers)
-					assert.NoError(t, err, "Couldn't decode Player")
+					assert.NoError(t, err, "Couldn't decode list of Players")
 
 					assert.Equal(t, data.expectedLength, len(*allPlayers))
 				}

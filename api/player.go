@@ -67,6 +67,10 @@ func (r *PlayerRouter) CreatePlayer(ctx echo.Context) (err error) {
 	return ctx.JSON(http.StatusCreated, player)
 }
 
+func (r* PlayerRouter) GetAllPlayersByUserId (ctx echo.Context) error {
+  return nil
+}
+
 func RegisterPlayersRoute(baseUrl string, e *echo.Echo, r PlayerRouter, middleware Middleware) {
 	e.POST(baseUrl+"/players", r.CreatePlayer)
 }
