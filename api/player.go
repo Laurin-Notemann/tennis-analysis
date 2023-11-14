@@ -35,6 +35,11 @@ func (r *PlayerRouter) CreatePlayer(ctx echo.Context) (err error) {
 	if err = ctx.Bind(request); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
+
+	if request.FirstName == "" || request.LastName == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "missing first or last name")
+	}
+
 	teamParams := db.CreateNewTeamWithOnePlayerParams{
 		FirstName: request.FirstName,
 		LastName:  request.LastName,
