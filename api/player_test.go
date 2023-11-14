@@ -10,6 +10,7 @@ import (
 	"github.com/Laurin-Notemann/tennis-analysis/db"
 	"github.com/Laurin-Notemann/tennis-analysis/handler"
 	"github.com/Laurin-Notemann/tennis-analysis/utils"
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 )
@@ -238,21 +239,103 @@ func TestGetAllPlayersByUserId(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func addMultiplePlayers(t *testing.T, e *echo.Echo, input []db.CreateNewTeamWithOnePlayerParams) {
-	for _, data := range input {
-		encodedData, err := json.Marshal(data)
-		assert.NoError(t, err, "Problem with encoding the user")
+type TestDeletePlayer struct {
+	name  string
+	error TestError
+	input uuid.UUID
+}
 
-		err, _, _ = DummyRequest(
-			t,
-			e,
-			http.MethodPost,
-			"/api/players/:id",
-			string(encodedData),
-			playRouter.CreatePlayer,
-			"",
-		)
-		assert.NoError(t, err, "Problem with adding new player")
+func TestDeletePlayerById(t *testing.T) {
+	e := echo.New()
+
+	user := DummyUser(t, e)
+	userId := user.ID
+
+	player := DummyPlayer(t, e, userId)
+
+	testDataInput := []TestDeletePlayer{
+		{
+			name: "success",
+			error: TestError{
+				IsError:       false,
+				ExpectedError: nil,
+			},
+			input: player.ID,
+		},
 	}
 
+	for _, data := range testDataInput {
+		t.Run("create player "+data.name, func(t *testing.T) {
+			encodedData, err := json.Marshal(data.input)
+			assert.NoError(t, err, "Problem with encoding the id")
+
+			url := "/api/players/:id"
+			t.Log(url)
+			err, rec, _ := DummyRequest(
+				t,
+				e,
+				http.MethodDelete,
+				url,
+				string(encodedData),
+				playRouter.DeletePlayerById,
+				player.ID.String(),
+			)
+			if data.error.IsError {
+				if assert.Error(t, err) {
+					assert.Equal(t, data.error.ExpectedError, err)
+				}
+			} else {
+				if assert.NoError(t, err, "Error with DeletePlayer route") {
+					deletedPlayer := new(db.Player)
+					err := json.Unmarshal(rec.Body.Bytes(), deletedPlayer)
+					assert.NoError(t, err, "Couldn't decode deleted Player")
+
+					assert.Equal(t, player, deletedPlayer)
+				}
+			}
+		})
+	}
+	_, err := userHandler.DeleteUserById(context.Background(), userId)
+	assert.NoError(t, err)
+}
+
+func addMultiplePlayers(t *testing.T, e *echo.Echo, input []db.CreateNewTeamWithOnePlayerParams) {
+	for _, data := range input {
+		addNewPlayer(t, e, data)
+	}
+}
+
+func DummyPlayer(t *testing.T, e *echo.Echo, userId uuid.UUID) db.Player {
+	seed := db.CreateNewTeamWithOnePlayerParams{
+		FirstName: "Laurin",
+		LastName:  "Notemann",
+		Name: sql.NullString{
+			String: "",
+			Valid:  false,
+		},
+		UserID: userId,
+	}
+	return addNewPlayer(t, e, seed)
+}
+
+func addNewPlayer(t *testing.T, e *echo.Echo, data db.CreateNewTeamWithOnePlayerParams) db.Player {
+	encodedData, err := json.Marshal(data)
+	assert.NoError(t, err, "Problem with encoding the player")
+
+	err, rec, _ := DummyRequest(
+		t,
+		e,
+		http.MethodPost,
+		"/api/players",
+		string(encodedData),
+		playRouter.CreatePlayer,
+		"",
+	)
+	assert.NoError(t, err, "Problem with adding new player")
+
+	player := new(db.Player)
+	err = json.Unmarshal(rec.Body.Bytes(), player)
+	assert.NoError(t, err, "Couldn't decode list of Players")
+
+	return *player
 }
