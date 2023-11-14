@@ -32,9 +32,8 @@ var Cfg = config.Config{
 	},
 }
 
-var TestDb = utils.DbQueriesTest()
-
 func RegisterDummyUser(t *testing.T, e *echo.Echo, userData handler.RegisterInput, tokenGen *utils.MockTokenGenerator, durAcc time.Duration, durRef time.Duration) *handler.ResponsePayload {
+	var TestDb = utils.DbQueriesTest()
 	var userHandler = handler.NewUserHandler(TestDb, Cfg)
 	var tokenHandler = handler.NewRefreshTokenHandler(TestDb, Cfg, tokenGen)
 	var authHandler = handler.NewAuthenticationHandler(TestDb, *userHandler, *tokenHandler, tokenGen)
@@ -45,7 +44,7 @@ func RegisterDummyUser(t *testing.T, e *echo.Echo, userData handler.RegisterInpu
 	encodeUser, err := json.Marshal(userData)
 	assert.NoError(t, err, "Problem with encoding the user")
 
-	err, rec, _ := DummyRequest(t, e, http.MethodPost, "/api/register", string(encodeUser), authRouter.Register)
+	err, rec, _ := DummyRequest(t, e, http.MethodPost, "/api/register", string(encodeUser), authRouter.Register, "")
 	assert.NoError(t, err, "Problem with registering test user")
 
 	user := new(handler.ResponsePayload)
@@ -75,11 +74,21 @@ func DummyRequest(
 	url string,
 	encodedInput string,
 	routerFunc echo.HandlerFunc,
+	param string,
 ) (err error, rec *httptest.ResponseRecorder, req *http.Request) {
-	req = httptest.NewRequest(method, url, strings.NewReader(string(encodedInput)))
+	if method == http.MethodGet {
+		req = httptest.NewRequest(method, url, nil)
+	} else {
+		req = httptest.NewRequest(method, url, strings.NewReader(string(encodedInput)))
+	}
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	rec = httptest.NewRecorder()
 	c := e.NewContext(req, rec)
+	if param != "" {
+		c.SetPath(url)
+		c.SetParamNames("id")
+		c.SetParamValues(param)
+	}
 
 	err = routerFunc(c)
 	return err, rec, req

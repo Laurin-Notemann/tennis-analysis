@@ -23,7 +23,7 @@ func main() {
 	// Parse Config
 	err := godotenv.Load()
 	if err != nil {
-		log.Printf("error loading .env file: %v\n", err)
+		log.Printf("error?? loading .env file: %v\n", err)
 	}
 
 	var cfg config.Config

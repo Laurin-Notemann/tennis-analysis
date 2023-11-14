@@ -15,7 +15,7 @@ async function doSomething() {
       e.preventDefault()
 
       const token = localStorage.getItem("access-token")
-      const res = await fetch("/api/users/" + userId, {
+      const res = await fetch("/api/players/" + userId, {
         headers: {
           Authorization: "Bearer " + token
         }

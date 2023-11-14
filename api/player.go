@@ -67,10 +67,44 @@ func (r *PlayerRouter) CreatePlayer(ctx echo.Context) (err error) {
 	return ctx.JSON(http.StatusCreated, player)
 }
 
-func (r* PlayerRouter) GetAllPlayersByUserId (ctx echo.Context) error {
-  return nil
+func (r *PlayerRouter) GetAllPlayersByUserId(ctx echo.Context) (err error) {
+	param := ctx.Param("id")
+	userId, err := uuid.Parse(param)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+	teams, err := r.TeamHandler.DB.GetAllTeamsByUserId(ctx.Request().Context(), userId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	var allPlayerIds []uuid.UUID
+
+	for _, team := range teams {
+		if team.PlayerTwo == nil {
+			allPlayerIds = append(allPlayerIds, team.PlayerOne)
+		}
+	}
+
+	var allPlayer []db.Player
+
+	for _, id := range allPlayerIds {
+		player, err := r.PlayerHandler.GetPlayerById(ctx.Request().Context(), id)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		}
+
+		allPlayer = append(allPlayer, player)
+	}
+
+	return ctx.JSON(http.StatusOK, allPlayer)
 }
 
 func RegisterPlayersRoute(baseUrl string, e *echo.Echo, r PlayerRouter, middleware Middleware) {
-	e.POST(baseUrl+"/players", r.CreatePlayer)
+	e.POST(baseUrl+"/players", r.CreatePlayer, middleware.AuthMiddleware)
+	e.GET(baseUrl+"/players/:id", r.GetAllPlayersByUserId, middleware.AuthMiddleware)
+}
+
+func filter() {
+
 }

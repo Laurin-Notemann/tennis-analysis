@@ -17,6 +17,7 @@ type UserMock struct {
 }
 
 func TestUserDbQueries(t *testing.T) {
+
 	testDbQueries := utils.DbQueriesTest()
 	userMock := UserMock{
 		user: db.User{},

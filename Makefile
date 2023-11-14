@@ -4,6 +4,7 @@
 
 
 dbConnectionString := postgresql://postgres:admin@127.0.0.1:5435/tennis?sslmode=disable
+testDb := postgresql://postgres:admin@127.0.0.1:5436/tennistest?sslmode=disable
 
 .PHONY: ensure-migrate
 ensure-migrate: ## Ensure that the migrate binary is installed
@@ -48,7 +49,6 @@ restart-dev-env: ensure-migrate end-dev-env start-dev-env
 ######
 #Test#
 ######
-testDb := postgresql://postgres:admin@127.0.0.1:5436/tennistest?sslmode=disable
 .PHONY: test
 test: run-test-db
 	@{ \

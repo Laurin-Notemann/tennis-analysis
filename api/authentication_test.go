@@ -48,9 +48,9 @@ type (
 )
 
 var tokeGen = utils.MockTokenGenerator{CallOut: 0}
-var userHandler = handler.NewUserHandler(TestDb, Cfg)
-var tokenHandler = handler.NewRefreshTokenHandler(TestDb, Cfg, &tokeGen)
-var authHandler = handler.NewAuthenticationHandler(TestDb, *userHandler, *tokenHandler, &tokeGen)
+var userHandler = handler.NewUserHandler(utils.DbQueriesTest(), Cfg)
+var tokenHandler = handler.NewRefreshTokenHandler(utils.DbQueriesTest(), Cfg, &tokeGen)
+var authHandler = handler.NewAuthenticationHandler(utils.DbQueriesTest(), *userHandler, *tokenHandler, &tokeGen)
 
 var authRouter = NewAuthRouter(*userHandler, *tokenHandler, &tokeGen, *authHandler)
 
@@ -189,7 +189,7 @@ func TestRegisterRoute(t *testing.T) {
 				t.Fatalf("Problem with encoding user %v", err)
 			}
 
-			err, rec, req := DummyRequest(t, e, http.MethodPost, "/api/register", string(encodeUser), authRouter.Register)
+			err, rec, req := DummyRequest(t, e, http.MethodPost, "/api/register", string(encodeUser), authRouter.Register, "")
 
 			if input.error.IsError {
 				if assert.Error(t, err) {

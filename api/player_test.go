@@ -27,9 +27,8 @@ type TestGetAllPlayer struct {
 	expectedLength int
 }
 
-var testDb = utils.DbQueriesTest()
-var playerHandler = handler.NewPlayerHandler(testDb)
-var teamHandler = handler.NewTeamHandler(testDb)
+var playerHandler = handler.NewPlayerHandler(utils.DbQueriesTest())
+var teamHandler = handler.NewTeamHandler(utils.DbQueriesTest())
 var playRouter = newPlayerRouter(*playerHandler, *teamHandler, *userHandler)
 
 func TestCreatePlayer(t *testing.T) {
@@ -146,6 +145,7 @@ func TestCreatePlayer(t *testing.T) {
 				"/api/players",
 				string(input),
 				playRouter.CreatePlayer,
+				"",
 			)
 			if data.error.IsError {
 				if assert.Error(t, err) {
@@ -172,6 +172,7 @@ func TestGetAllPlayersByUserId(t *testing.T) {
 
 	user := DummyUser(t, e)
 	userId := user.ID
+	userIdString := userId.String()
 
 	testDataInput := []TestGetAllPlayer{
 		{
@@ -206,13 +207,17 @@ func TestGetAllPlayersByUserId(t *testing.T) {
 
 	for _, data := range testDataInput {
 		t.Run("create player "+data.name, func(t *testing.T) {
+			addMultiplePlayers(t, e, data.input)
+			url := "/api/players/:id"
+			t.Log(url)
 			err, rec, _ := DummyRequest(
 				t,
 				e,
 				http.MethodGet,
-				"/api/players",
+				url,
 				string(""),
 				playRouter.GetAllPlayersByUserId,
+				userIdString,
 			)
 			if data.error.IsError {
 				if assert.Error(t, err) {
@@ -229,6 +234,8 @@ func TestGetAllPlayersByUserId(t *testing.T) {
 			}
 		})
 	}
+	_, err := userHandler.DeleteUserById(context.Background(), userId)
+	assert.NoError(t, err)
 }
 
 func addMultiplePlayers(t *testing.T, e *echo.Echo, input []db.CreateNewTeamWithOnePlayerParams) {
@@ -240,9 +247,10 @@ func addMultiplePlayers(t *testing.T, e *echo.Echo, input []db.CreateNewTeamWith
 			t,
 			e,
 			http.MethodPost,
-			"/api/players",
+			"/api/players/:id",
 			string(encodedData),
 			playRouter.CreatePlayer,
+			"",
 		)
 		assert.NoError(t, err, "Problem with adding new player")
 	}
