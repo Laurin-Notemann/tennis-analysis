@@ -23,6 +23,7 @@ sql:
        - "./db/migrations/000004_add-stats.up.sql"
        - "./db/migrations/000005_remove-winner-id.up.sql"
        - "./db/migrations/000006_update-on-deletion.up.sql"
+       - "./db/migrations/000007_add-unique-first-last-name.up.sql"
       gen:
         go:
             package: db

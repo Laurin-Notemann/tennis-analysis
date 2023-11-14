@@ -22,3 +22,7 @@ func (d *DBQueriesMock) GetTeamById(ctx context.Context, id uuid.UUID) (db.Team,
 func (d *DBQueriesMock) DeleteTeamById(ctx context.Context, id uuid.UUID) (db.Team, error) {
 	return db.Team{}, nil
 }
+
+func (d *DBQueriesMock) GetAllTeamsByUserId(ctx context.Context, userId uuid.UUID) ([]db.Team, error){
+	return []db.Team{}, nil
+}

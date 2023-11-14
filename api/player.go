@@ -8,6 +8,7 @@ import (
 	"github.com/Laurin-Notemann/tennis-analysis/handler"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
+	"github.com/lib/pq"
 )
 
 type PlayerRouter struct {
@@ -51,6 +52,9 @@ func (r *PlayerRouter) CreatePlayer(ctx echo.Context) (err error) {
 	}
 
 	team, err := r.TeamHandler.CreateTeamWithOnePlayer(ctx.Request().Context(), teamParams)
+	if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
+		return echo.NewHTTPError(http.StatusConflict, "player already exists")
+	}
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
