@@ -18,6 +18,7 @@ type Querier interface {
 	DeleteTeamById(ctx context.Context, id uuid.UUID) (Team, error)
 	DeleteTokenByUserId(ctx context.Context, userID uuid.UUID) error
 	DeleteUserById(ctx context.Context, id uuid.UUID) (User, error)
+	GetAllTeamsByUserId(ctx context.Context, userID uuid.UUID) ([]Team, error)
 	GetAllUsers(ctx context.Context) ([]User, error)
 	GetPlayerById(ctx context.Context, id uuid.UUID) (Player, error)
 	GetTeamById(ctx context.Context, id uuid.UUID) (Team, error)

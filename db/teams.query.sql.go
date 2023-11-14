@@ -125,6 +125,43 @@ func (q *Queries) DeleteTeamById(ctx context.Context, id uuid.UUID) (Team, error
 	return i, err
 }
 
+const getAllTeamsByUserId = `-- name: GetAllTeamsByUserId :many
+SELECT id, name, user_id, player_one, player_two, created_at, updated_at
+FROM teams
+WHERE user_id = $1
+`
+
+func (q *Queries) GetAllTeamsByUserId(ctx context.Context, userID uuid.UUID) ([]Team, error) {
+	rows, err := q.db.QueryContext(ctx, getAllTeamsByUserId, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Team
+	for rows.Next() {
+		var i Team
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.UserID,
+			&i.PlayerOne,
+			&i.PlayerTwo,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getTeamById = `-- name: GetTeamById :one
 SELECT id, name, user_id, player_one, player_two, created_at, updated_at 
 FROM teams

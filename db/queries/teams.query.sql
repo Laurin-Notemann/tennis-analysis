@@ -45,3 +45,7 @@ DELETE FROM teams
 WHERE id = $1
 RETURNING *;
 
+-- name: GetAllTeamsByUserId :many
+SELECT *
+FROM teams
+WHERE user_id = $1;
