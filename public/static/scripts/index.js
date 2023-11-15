@@ -7,7 +7,15 @@ async function doSomething() {
   const userId = localStorage.getItem("userId")
   const htmlBody = document.querySelector("body")
   if (userId) {
+    const viewPlayer = document.createElement("button")
+    viewPlayer.innerHTML = "View all Players"
+    viewPlayer.addEventListener("click", e => {
+      e.preventDefault()
+
+      window.location.href = "/players"
+    })
     const testButton = document.createElement("button")
+    htmlBody.appendChild(viewPlayer)
     htmlBody.appendChild(testButton)
 
     testButton.innerHTML = "Test"
@@ -15,7 +23,7 @@ async function doSomething() {
       e.preventDefault()
 
       const token = localStorage.getItem("access-token")
-      const res = await fetch("/api/users/" + userId, {
+      const res = await fetch("/api/players/" + userId, {
         headers: {
           Authorization: "Bearer " + token
         }

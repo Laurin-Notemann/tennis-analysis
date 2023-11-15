@@ -28,6 +28,9 @@ func RegisterHtmlPageRoutes(e *echo.Echo) {
 	e.GET("/", indexRoute)
 	e.GET("/login", loginRoute)
 	e.GET("/register", registerRoute)
+	e.GET("/create-player", createPlayerRoute)
+	e.GET("/players", playersRoute)
+  e.GET("/edit-player/:id", editPlayerRoute)
 }
 
 func indexRoute(c echo.Context) error {
@@ -40,4 +43,16 @@ func loginRoute(c echo.Context) error {
 
 func registerRoute(c echo.Context) error {
   return c.Render(http.StatusOK, "register.html", "")
+}
+
+func playersRoute(c echo.Context) error {
+  return c.Render(http.StatusOK, "players.html", "")
+}
+
+func createPlayerRoute(c echo.Context) error {
+  return c.Render(http.StatusOK, "create-player.html", "")
+}
+
+func editPlayerRoute(c echo.Context) error {
+  return c.Render(http.StatusOK, "edit-player.html", "")
 }

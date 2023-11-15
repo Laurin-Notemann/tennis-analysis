@@ -26,7 +26,9 @@ WITH new_token AS (
     RETURNING id
 )
 UPDATE users
-SET refresh_token_id = (SELECT id FROM new_token)
+SET 
+  refresh_token_id = (SELECT id FROM new_token),
+  updated_at = Now()
 WHERE users.id = $3
 RETURNING id, username, email, password_hash, created_at, updated_at, refresh_token_id
 `

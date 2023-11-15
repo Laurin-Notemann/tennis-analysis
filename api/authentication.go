@@ -20,7 +20,7 @@ type AuthenticationRouter struct {
 	AuthHandler  handler.AuthenticationHandler
 }
 
-func newAuthRouter(
+func NewAuthRouter(
 	h handler.UserHandler,
 	t handler.RefreshTokenHandler,
 	tg utils.TokenGenerator,
@@ -34,7 +34,7 @@ func newAuthRouter(
 	}
 }
 
-func (r AuthenticationRouter) register(ctx echo.Context) (err error) {
+func (r AuthenticationRouter) Register(ctx echo.Context) (err error) {
 	registerInput := new(handler.RegisterInput)
 	if err = ctx.Bind(registerInput); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
@@ -140,7 +140,7 @@ func (r AuthenticationRouter) login(ctx echo.Context) (err error) {
 
 func RegisterAuthRoute(baseUrl string, e *echo.Echo, r AuthenticationRouter) {
 
-	e.POST(baseUrl+"/register", r.register)
+	e.POST(baseUrl+"/register", r.Register)
 	e.POST(baseUrl+"/refresh", r.refresh)
 	e.POST(baseUrl+"/login", r.login)
 }

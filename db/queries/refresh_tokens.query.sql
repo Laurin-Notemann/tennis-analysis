@@ -12,7 +12,9 @@ WITH new_token AS (
     RETURNING id
 )
 UPDATE users
-SET refresh_token_id = (SELECT id FROM new_token)
+SET 
+  refresh_token_id = (SELECT id FROM new_token),
+  updated_at = Now()
 WHERE users.id = sqlc.arg(user_id)
 RETURNING *;
 
