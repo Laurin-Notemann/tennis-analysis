@@ -15,6 +15,7 @@ type Querier interface {
 	CreateTeamWithTwoPlayers(ctx context.Context, arg CreateTeamWithTwoPlayersParams) (Team, error)
 	CreateToken(ctx context.Context, arg CreateTokenParams) (User, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
+	DeletePlayerById(ctx context.Context, id uuid.UUID) (Player, error)
 	DeleteTeamById(ctx context.Context, id uuid.UUID) (Team, error)
 	DeleteTokenByUserId(ctx context.Context, userID uuid.UUID) error
 	DeleteUserById(ctx context.Context, id uuid.UUID) (User, error)
@@ -26,6 +27,7 @@ type Querier interface {
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserById(ctx context.Context, id uuid.UUID) (User, error)
 	GetUserByUsername(ctx context.Context, username string) (User, error)
+	UpdatePlayerById(ctx context.Context, arg UpdatePlayerByIdParams) (Player, error)
 	UpdateTokenByUserId(ctx context.Context, arg UpdateTokenByUserIdParams) (RefreshToken, error)
 	UpdateUserById(ctx context.Context, arg UpdateUserByIdParams) (User, error)
 }

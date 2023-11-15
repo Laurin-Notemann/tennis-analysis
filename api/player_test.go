@@ -207,7 +207,7 @@ func TestGetAllPlayersByUserId(t *testing.T) {
 	}
 
 	for _, data := range testDataInput {
-		t.Run("create player "+data.name, func(t *testing.T) {
+		t.Run("get players "+data.name, func(t *testing.T) {
 			addMultiplePlayers(t, e, data.input)
 			url := "/api/players/:id"
 			t.Log(url)
@@ -265,12 +265,11 @@ func TestDeletePlayerById(t *testing.T) {
 	}
 
 	for _, data := range testDataInput {
-		t.Run("create player "+data.name, func(t *testing.T) {
+		t.Run("delete player "+data.name, func(t *testing.T) {
 			encodedData, err := json.Marshal(data.input)
 			assert.NoError(t, err, "Problem with encoding the id")
 
 			url := "/api/players/:id"
-			t.Log(url)
 			err, rec, _ := DummyRequest(
 				t,
 				e,
@@ -290,7 +289,73 @@ func TestDeletePlayerById(t *testing.T) {
 					err := json.Unmarshal(rec.Body.Bytes(), deletedPlayer)
 					assert.NoError(t, err, "Couldn't decode deleted Player")
 
-					assert.Equal(t, player, deletedPlayer)
+					assert.Equal(t, player, *deletedPlayer)
+				}
+			}
+		})
+	}
+	_, err := userHandler.DeleteUserById(context.Background(), userId)
+	assert.NoError(t, err)
+}
+
+type TestUpdatePlayer struct {
+	name  string
+	error TestError
+	input db.UpdatePlayerByIdParams
+}
+
+func TestUpdatePlayerById(t *testing.T) {
+	e := echo.New()
+
+	user := DummyUser(t, e)
+	userId := user.ID
+
+	player := DummyPlayer(t, e, userId)
+
+	testDataInput := []TestUpdatePlayer{
+		{
+			name: "success",
+			error: TestError{
+				IsError:       false,
+				ExpectedError: nil,
+			},
+			input: db.UpdatePlayerByIdParams{
+				ID:        player.ID,
+				FirstName: "Oskar",
+				LastName:  "Kuech",
+			},
+		},
+	}
+
+	for _, data := range testDataInput {
+		t.Run("delete player "+data.name, func(t *testing.T) {
+			encodedData, err := json.Marshal(data.input)
+			assert.NoError(t, err, "Problem with encoding the update params")
+
+			url := "/api/players"
+			err, rec, _ := DummyRequest(
+				t,
+				e,
+				http.MethodPut,
+				url,
+				string(encodedData),
+				playRouter.UpdatePlayerById,
+				"",
+			)
+			if data.error.IsError {
+				if assert.Error(t, err) {
+					assert.Equal(t, data.error.ExpectedError, err)
+				}
+			} else {
+				if assert.NoError(t, err, "Error with updatePlayer route") {
+					updatedPlayer := new(db.Player)
+					err := json.Unmarshal(rec.Body.Bytes(), updatedPlayer)
+					assert.NoError(t, err, "Couldn't decode updated Player")
+
+					assert.NotEqual(t, player, *updatedPlayer)
+					assert.Equal(t, data.input.FirstName, updatedPlayer.FirstName)
+					assert.Equal(t, data.input.LastName, updatedPlayer.LastName)
+					assert.Equal(t, data.input.ID, updatedPlayer.ID)
 				}
 			}
 		})

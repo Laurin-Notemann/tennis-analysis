@@ -11,6 +11,25 @@ import (
 	"github.com/google/uuid"
 )
 
+const deletePlayerById = `-- name: DeletePlayerById :one
+DELETE FROM players
+WHERE id = $1
+RETURNING id, first_name, last_name, created_at, updated_at
+`
+
+func (q *Queries) DeletePlayerById(ctx context.Context, id uuid.UUID) (Player, error) {
+	row := q.db.QueryRowContext(ctx, deletePlayerById, id)
+	var i Player
+	err := row.Scan(
+		&i.ID,
+		&i.FirstName,
+		&i.LastName,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getPlayerById = `-- name: GetPlayerById :one
 SELECT id, first_name, last_name, created_at, updated_at 
 FROM players
@@ -20,6 +39,35 @@ LIMIT 1
 
 func (q *Queries) GetPlayerById(ctx context.Context, id uuid.UUID) (Player, error) {
 	row := q.db.QueryRowContext(ctx, getPlayerById, id)
+	var i Player
+	err := row.Scan(
+		&i.ID,
+		&i.FirstName,
+		&i.LastName,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const updatePlayerById = `-- name: UpdatePlayerById :one
+UPDATE players
+SET 
+  first_name = $1, 
+  last_name = $2,
+  updated_at = Now()
+WHERE id = $3
+RETURNING id, first_name, last_name, created_at, updated_at
+`
+
+type UpdatePlayerByIdParams struct {
+	FirstName string
+	LastName  string
+	ID        uuid.UUID
+}
+
+func (q *Queries) UpdatePlayerById(ctx context.Context, arg UpdatePlayerByIdParams) (Player, error) {
+	row := q.db.QueryRowContext(ctx, updatePlayerById, arg.FirstName, arg.LastName, arg.ID)
 	var i Player
 	err := row.Scan(
 		&i.ID,

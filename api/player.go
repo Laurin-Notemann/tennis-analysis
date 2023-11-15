@@ -26,9 +26,9 @@ func newPlayerRouter(
 }
 
 type CreatePlayerRequest struct {
-	FirstName string
-	LastName  string
-	UserId    uuid.UUID
+	FirstName string    `json:"firstName"`
+	LastName  string    `json:"lastName"`
+	UserId    uuid.UUID `json:"userId"`
 }
 
 func (r *PlayerRouter) CreatePlayer(ctx echo.Context) (err error) {
@@ -73,6 +73,7 @@ func (r *PlayerRouter) GetAllPlayersByUserId(ctx echo.Context) (err error) {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
+
 	teams, err := r.TeamHandler.DB.GetAllTeamsByUserId(ctx.Request().Context(), userId)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
@@ -100,9 +101,39 @@ func (r *PlayerRouter) GetAllPlayersByUserId(ctx echo.Context) (err error) {
 	return ctx.JSON(http.StatusOK, allPlayer)
 }
 
+func (r *PlayerRouter) DeletePlayerById(ctx echo.Context) (err error) {
+	playerId, err := uuid.Parse(ctx.Param("id"))
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	player, err := r.PlayerHandler.DeletePlayerById(ctx.Request().Context(), playerId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	return ctx.JSON(http.StatusOK, player)
+}
+
+func (r *PlayerRouter) UpdatePlayerById(ctx echo.Context) (err error) {
+	request := new(db.UpdatePlayerByIdParams)
+	if err = ctx.Bind(request); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	player, err := r.PlayerHandler.UpdatePlayerById(ctx.Request().Context(), *request)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	return ctx.JSON(http.StatusOK, player)
+}
+
 func RegisterPlayersRoute(baseUrl string, e *echo.Echo, r PlayerRouter, middleware Middleware) {
 	e.POST(baseUrl+"/players", r.CreatePlayer, middleware.AuthMiddleware)
 	e.GET(baseUrl+"/players/:id", r.GetAllPlayersByUserId, middleware.AuthMiddleware)
+	e.DELETE(baseUrl+"/players/:id", r.DeletePlayerById, middleware.AuthMiddleware)
+	e.PUT(baseUrl+"/players", r.UpdatePlayerById, middleware.AuthMiddleware)
 }
 
 func filter() {
