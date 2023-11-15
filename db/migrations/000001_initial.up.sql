@@ -23,7 +23,7 @@ CREATE TABLE "players" (
 
 CREATE TABLE "teams" (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
-  name text,
+  name text NOT NULL,
 
   user_id uuid NOT NULL,
   player_one uuid NOT NULL,

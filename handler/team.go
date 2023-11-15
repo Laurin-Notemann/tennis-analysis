@@ -23,3 +23,11 @@ func (h *TeamHandler) CreateTeamWithOnePlayer(ctx context.Context, args db.Creat
 	}
 	return team, nil
 }
+
+func (h *TeamHandler) CreateTeamWithTwoPlayers(ctx context.Context, args db.CreateTeamWithTwoPlayersParams) (db.Team, error) {
+	team, err := h.DB.CreateTeamWithTwoPlayers(ctx, args)
+	if err != nil {
+		return db.Team{}, err
+	}
+	return team, nil
+}

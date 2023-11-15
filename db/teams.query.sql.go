@@ -7,7 +7,6 @@ package db
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/google/uuid"
 )
@@ -38,7 +37,7 @@ RETURNING id, name, user_id, player_one, player_two, created_at, updated_at
 type CreateNewTeamWithOnePlayerParams struct {
 	FirstName string
 	LastName  string
-	Name      sql.NullString
+	Name      string
 	UserID    uuid.UUID
 }
 
@@ -78,7 +77,7 @@ RETURNING id, name, user_id, player_one, player_two, created_at, updated_at
 `
 
 type CreateTeamWithTwoPlayersParams struct {
-	Name      sql.NullString
+	Name      string
 	UserID    uuid.UUID
 	PlayerOne uuid.UUID
 	PlayerTwo *uuid.UUID
