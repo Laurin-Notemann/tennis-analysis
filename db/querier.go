@@ -28,6 +28,7 @@ type Querier interface {
 	GetUserById(ctx context.Context, id uuid.UUID) (User, error)
 	GetUserByUsername(ctx context.Context, username string) (User, error)
 	UpdatePlayerById(ctx context.Context, arg UpdatePlayerByIdParams) (Player, error)
+	UpdateTeamById(ctx context.Context, arg UpdateTeamByIdParams) (Team, error)
 	UpdateTokenByUserId(ctx context.Context, arg UpdateTokenByUserIdParams) (RefreshToken, error)
 	UpdateUserById(ctx context.Context, arg UpdateUserByIdParams) (User, error)
 }

@@ -67,8 +67,8 @@ func (r *PlayerRouter) GetAllPlayersByUserId(ctx echo.Context) (err error) {
 	param := ctx.Param("id")
 	userId, err := uuid.Parse(param)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
-	}
+    return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+  }
 
 	teams, err := r.TeamHandler.DB.GetAllTeamsByUserId(ctx.Request().Context(), userId)
 	if err != nil {
