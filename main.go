@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
 
 	"github.com/joho/godotenv"
@@ -63,7 +64,12 @@ func main() {
 
 	server := api.NewApi(ctx, resourceHandler, &tokenGen)
 
-	err = server.Start("127.0.0.1:3333")
+  echoPort := cfg.ECHO.Port
+  echoHost := cfg.ECHO.Host
+
+  echoString := echoHost +":"+ fmt.Sprint(echoPort)
+
+	err = server.Start(echoString)
 	if err != nil {
 		log.Fatal(err)
 	}

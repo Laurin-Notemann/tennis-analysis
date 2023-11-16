@@ -4,7 +4,7 @@
 
 
 dbConnectionString := postgresql://postgres:admin@127.0.0.1:5435/tennis?sslmode=disable
-testDb := postgresql://postgres:admin@127.0.0.1:5436/tennistest?sslmode=disable
+testDb := postgresql://postgres:admin@127.0.0.1:5444/tennistest?sslmode=disable
 
 .PHONY: ensure-migrate
 ensure-migrate: ## Ensure that the migrate binary is installed
@@ -37,6 +37,7 @@ start-dev-env: ensure-migrate
 	@docker compose up tennisdb -d  
 	@sleep 1
 	@migrate -source file://db/migrations -database ${dbConnectionString} up
+	@go run main.go
 
 .PHONY: end-dev-env
 end-dev-env: 
