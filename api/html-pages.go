@@ -19,7 +19,7 @@ func (t *Template) Render(w io.Writer, name string, data interface{}, c echo.Con
 	return t.templates.ExecuteTemplate(w, name, data)
 }
 
-func RegisterHtmlPageRoutes(e *echo.Echo) {
+func RegisterHtmlPageRoutes(e *echo.Echo, middleware Middleware) {
 	t := &Template{
 		templates: template.Must(template.ParseGlob("public/views/*.html")),
 	}
@@ -31,6 +31,9 @@ func RegisterHtmlPageRoutes(e *echo.Echo) {
 	e.GET("/create-player", createPlayerRoute)
 	e.GET("/players", playersRoute)
   e.GET("/edit-player/:id", editPlayerRoute)
+	e.GET("/create-team", createTeamRoute)
+	e.GET("/teams", teamsRoute)
+  e.GET("/edit-team/:id", editTeamRoute)
 }
 
 func indexRoute(c echo.Context) error {
@@ -55,4 +58,16 @@ func createPlayerRoute(c echo.Context) error {
 
 func editPlayerRoute(c echo.Context) error {
   return c.Render(http.StatusOK, "edit-player.html", "")
+}
+
+func teamsRoute(c echo.Context) error {
+  return c.Render(http.StatusOK, "teams.html", "")
+}
+
+func createTeamRoute(c echo.Context) error {
+  return c.Render(http.StatusOK, "create-team.html", "")
+}
+
+func editTeamRoute(c echo.Context) error {
+  return c.Render(http.StatusOK, "edit-team.html", "")
 }

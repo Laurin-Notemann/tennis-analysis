@@ -13,13 +13,16 @@
 <body>
   <nav>
   </nav>
-  <main class="create-main">
-    <div class="player-team-wrapper" data-all-players="all-players-div">
-    </div>
-  </main>
+  <form action="" data-form="edit-team-form">
+    <input data-input="edit-first-name" name="playerOne" type="text" placeholder="First Name">
+    <input data-input="edit-last-name" name="last-name" type="text" placeholder="Last Name">
+    <button data-button="edit-player-button">Edit Player</button>
+  </form>
+  <div data-message="edit-player-message"></div>
 </body>
 
-<script type="module" src="/static/scripts/players.js">
+<script type="module" src="/static/scripts/edit-player.js">
 </script>
 
 </html>
+

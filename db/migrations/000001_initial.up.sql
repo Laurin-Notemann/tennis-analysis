@@ -35,7 +35,8 @@ CREATE TABLE "teams" (
   CONSTRAINT "FK_Teams.user_id" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   CONSTRAINT "FK_Teams.player_one" FOREIGN KEY (player_one) REFERENCES players(id) ON DELETE CASCADE,
   CONSTRAINT "FK_Teams.player_two" FOREIGN KEY (player_two) REFERENCES players(id) ON DELETE SET NULL,
-  CONSTRAINT "CK_Teams_DistinctPlayers" CHECK (player_one <> player_two OR player_two IS NULL)
+  CONSTRAINT "CK_Teams_DistinctPlayers" CHECK (player_one <> player_two OR player_two IS NULL),
+  CONSTRAINT "unique_players" UNIQUE (player_one, player_two)
 );
 
 

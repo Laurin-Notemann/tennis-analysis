@@ -8,6 +8,15 @@ async function renderAllPlayer() {
   const players = document.querySelector(`[data-all-players="all-players-div"]`)
   players.innerHTML = ""
 
+  const createPlayer = document.createElement("button")
+  createPlayer.classList.add("create-player-team-button")
+  createPlayer.innerHTML = "Create New Player"
+  createPlayer.addEventListener("click", e => {
+    e.preventDefault()
+
+    window.location.href = "/create-player"
+  })
+  players.append(createPlayer)
   const headers = getHeaders()
   const userId = localStorage.getItem("userId")
   const res = await fetch("/api/players/" + userId, {
@@ -28,6 +37,7 @@ async function renderAllPlayer() {
       playersObj.map(player => {
         const playerId = player.ID
         const playerEl = document.createElement("div")
+        playerEl.classList.add("player-team-obj")
 
         const playerEditButton = document.createElement("button")
         playerEditButton.innerHTML = "Edit"
@@ -48,7 +58,6 @@ async function renderAllPlayer() {
             method: "DELETE",
             headers: headers
           })
-          console.log(res)
           if (res.status == 200) {
             await renderAllPlayer()
           } else if (res.status == 500) {
@@ -60,22 +69,17 @@ async function renderAllPlayer() {
         playerName.innerHTML = player.FirstName + " " + player.LastName
 
         playerEl.appendChild(playerName)
-        playerEl.appendChild(playerEditButton)
-        playerEl.appendChild(playerDeleteButton)
+        const editDelete = document.createElement("div")
+        editDelete.classList.add("edit-delete-button")
+        editDelete.appendChild(playerEditButton)
+        editDelete.appendChild(playerDeleteButton)
 
+
+        playerEl.appendChild(editDelete)
         players.appendChild(playerEl)
       })
     }
   }
-  htmlBody.appendChild(players)
-  const createPlayer = document.createElement("button")
-  createPlayer.innerHTML = "Create New Player"
-  createPlayer.addEventListener("click", e => {
-    e.preventDefault()
-
-    window.location.href = "/create-player"
-  })
-  players.append(createPlayer)
 }
 
 
