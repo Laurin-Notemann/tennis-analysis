@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <link rel="stylesheet" href="/static/styles/reset.css">
+  <link rel="stylesheet" href="/static/styles/main.css">
+  <link rel="stylesheet" href='https://fonts.googleapis.com/css?family=Inter'>
+</head>
+
+<body>
+  <nav>
+  </nav>
+
+  <main class="create-main">
+
+    <div class="form-wrapper">
+      <h2>Create a new Team:</h2>
+      <form action="" data-form="create-team-form">
+        <div class="dropdown-button-wrapper">
+          <div class="drop-down-wrapper">
+            <button data-button="choose-player-one">Choose Player One</button>
+            <div class="dropdown-players" data-dropdown="dropdown-player-one"></div>
+          </div>
+          <div class="drop-down-wrapper">
+            <button data-button="choose-player-two">Choose Player Two</button>
+            <div class="dropdown-players" data-dropdown="dropdown-player-two"></div>
+          </div>
+        </div>
+        <input data-input="player-one" name="player-one" type="hidden" value="">
+        <input data-input="player-two" name="player-two" type="hidden" value="">
+        <input name="team-name" type="text" placeholder="Team Name (can be empty)">
+        <button data-button="create-team-button">Create Team</button>
+      </form>
+      <div class="success-mess-button" data-message="create-team-message">
+      </div>
+    </div>
+
+  </main>
+
+</body>
+
+<script type="module" src="/static/scripts/create-team.js">
+</script>
+
+</html>

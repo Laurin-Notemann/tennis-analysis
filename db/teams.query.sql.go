@@ -7,7 +7,6 @@ package db
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/google/uuid"
 )
@@ -38,7 +37,7 @@ RETURNING id, name, user_id, player_one, player_two, created_at, updated_at
 type CreateNewTeamWithOnePlayerParams struct {
 	FirstName string
 	LastName  string
-	Name      sql.NullString
+	Name      string
 	UserID    uuid.UUID
 }
 
@@ -78,7 +77,7 @@ RETURNING id, name, user_id, player_one, player_two, created_at, updated_at
 `
 
 type CreateTeamWithTwoPlayersParams struct {
-	Name      sql.NullString
+	Name      string
 	UserID    uuid.UUID
 	PlayerOne uuid.UUID
 	PlayerTwo *uuid.UUID
@@ -171,6 +170,44 @@ LIMIT 1
 
 func (q *Queries) GetTeamById(ctx context.Context, id uuid.UUID) (Team, error) {
 	row := q.db.QueryRowContext(ctx, getTeamById, id)
+	var i Team
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.UserID,
+		&i.PlayerOne,
+		&i.PlayerTwo,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const updateTeamById = `-- name: UpdateTeamById :one
+UPDATE teams
+SET 
+  player_one = $1,
+  player_two = $2,
+  name = $3,
+  updated_at = Now()
+WHERE id = $4
+RETURNING id, name, user_id, player_one, player_two, created_at, updated_at
+`
+
+type UpdateTeamByIdParams struct {
+	PlayerOne uuid.UUID
+	PlayerTwo *uuid.UUID
+	Name      string
+	ID        uuid.UUID
+}
+
+func (q *Queries) UpdateTeamById(ctx context.Context, arg UpdateTeamByIdParams) (Team, error) {
+	row := q.db.QueryRowContext(ctx, updateTeamById,
+		arg.PlayerOne,
+		arg.PlayerTwo,
+		arg.Name,
+		arg.ID,
+	)
 	var i Team
 	err := row.Scan(
 		&i.ID,

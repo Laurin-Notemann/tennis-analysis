@@ -1,47 +1,71 @@
-import { loadNavBar } from "./navbar.js";
+import { loadNavBar } from "./navbar.js"
 
 loadNavBar()
 
-async function doSomething() {
+async function loadIndexPage() {
 
   const userId = localStorage.getItem("userId")
-  const htmlBody = document.querySelector("body")
+  const mainHtml = document.querySelector("main")
   if (userId) {
-    const viewPlayer = document.createElement("button")
-    viewPlayer.innerHTML = "View all Players"
-    viewPlayer.addEventListener("click", e => {
-      e.preventDefault()
 
-      window.location.href = "/players"
-    })
-    const testButton = document.createElement("button")
-    htmlBody.appendChild(viewPlayer)
-    htmlBody.appendChild(testButton)
+    //const navbar = document.querySelector("nav")
 
-    testButton.innerHTML = "Test"
-    testButton.addEventListener("click", async e => {
-      e.preventDefault()
+    const username = localStorage.getItem("username")
+    mainHtml.appendChild(mainPageButton("Players", "/players"))
+    mainHtml.appendChild(mainPageButton("Teams", "/teams"))
+    mainHtml.appendChild(mainPageButton("Matches", "/matches"))
 
-      const token = localStorage.getItem("access-token")
-      const res = await fetch("/api/players/" + userId, {
-        headers: {
-          Authorization: "Bearer " + token
-        }
-      })
+    const greetingEl = document.querySelector(".user-greeting")
+    const usernameEl = document.createElement("h2")
+    usernameEl.innerHTML = username
 
-      console.log(res)
-      console.log(res.body)
-      try {
-        console.log(await res.json())
-      } catch (e) {
-        console.log(e)
-      }
-    })
+    greetingEl.appendChild(usernameEl)
   } else {
     const err = document.createElement("p")
     err.innerHTML = "Pls log in to Test"
-    htmlBody.appendChild(err)
+    const mainHtml = document.querySelector("main")
+    mainHtml.appendChild(mainPageButton("Sign in", "/login"))
+    mainHtml.appendChild(mainPageButton("Sign up", "/register"))
+
+    const greetingEl = document.querySelector(".user-greeting")
+    const usernameEl = document.createElement("h2")
+    usernameEl.innerHTML = "please Sign in or Sign up"
+
+    greetingEl.appendChild(usernameEl)
   }
 }
 
-doSomething()
+loadIndexPage()
+
+function mainPageButton(resource, url) {
+  const button = document.createElement("button")
+  button.innerHTML = resource
+  button.addEventListener("click", e => {
+    e.preventDefault()
+
+    window.location.href = url
+  })
+  return button
+}
+
+function testButon() {
+  const testButton = document.createElement("button")
+  htmlBody.appendChild(testButton)
+
+  testButton.innerHTML = "Test"
+  testButton.addEventListener("click", async e => {
+    e.preventDefault()
+
+    const token = localStorage.getItem("access-token")
+    const res = await fetch("/api/players/" + userId, {
+      headers: {
+        Authorization: "Bearer " + token
+      }
+    })
+    try {
+      console.log(await res.json())
+    } catch (e) {
+      console.log(e)
+    }
+  })
+}

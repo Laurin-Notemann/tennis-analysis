@@ -28,7 +28,7 @@ createPlayer.addEventListener("submit", async e => {
   })
 
   if (res.status == 201) {
-    addMessage(message, "Player was successfully created")
+    addMessage(message, "Player was successfully created", "Players", "/players")
   }
   else {
     message.innerHTML = ""

@@ -14,6 +14,7 @@ func NewApi(ctx context.Context, resource handler.ResourceHandlers, tokenGen uti
 	authRouter := NewAuthRouter(resource.UserHandler, resource.TokenHandler, tokenGen, resource.AuthHandler)
 	userRouter := newUserRouter(resource.UserHandler)
 	playerRouter := newPlayerRouter(resource.PlayerHandler, resource.TeamHandler, resource.UserHandler)
+	teamRouter := newTeamRouter(resource.PlayerHandler, resource.TeamHandler, resource.UserHandler)
 
 	customMiddleware := NewMiddleware(resource.AuthHandler)
 
@@ -27,7 +28,8 @@ func NewApi(ctx context.Context, resource handler.ResourceHandlers, tokenGen uti
 
 	RegisterUserRoute(baseUrl, e, *userRouter, *customMiddleware)
 	RegisterPlayersRoute(baseUrl, e, *playerRouter, *customMiddleware)
-	RegisterHtmlPageRoutes(e)
+	RegisterTeamRoute(baseUrl, e, *teamRouter, *customMiddleware)
+	RegisterHtmlPageRoutes(e, *customMiddleware)
 
 	return e
 }

@@ -30,7 +30,6 @@ registerUserForm.addEventListener("submit", async e => {
     const userPayload = await res.json()
     if (res.status == 201) {
       setAccessTokenAndUser({ success: true, payload: userPayload })
-      console.log(localStorage.getItem("user"))
       window.location.href = "/"
     } else if (res.status == 409) {
       displayErrorMessage(userPayload)

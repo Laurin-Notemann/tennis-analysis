@@ -12,14 +12,18 @@
 
 <body>
   <nav>
-    <h1 class="title-homepage">Tennis Analyis</h1>
   </nav>
-  <form action="" data-form="edit-player-form">
-    <input data-input="edit-first-name" name="first-name" type="text" placeholder="First Name">
-    <input data-input="edit-last-name" name="last-name" type="text" placeholder="Last Name">
-    <button data-button="edit-player-button">Edit Player</button>
-  </form>
-  <div data-message="edit-player-message"></div>
+  <main class="create-main">
+    <div class="form-wrapper">
+      <h2>Edit player</h2>
+      <form action="" data-form="edit-player-form">
+        <input data-input="edit-first-name" name="first-name" type="text" placeholder="First Name">
+        <input data-input="edit-last-name" name="last-name" type="text" placeholder="Last Name">
+        <button data-button="edit-player-button">Edit Player</button>
+      </form>
+      <div class="success-mess-button" data-message="edit-player-message"></div>
+    </div>
+  </main>
 </body>
 
 <script type="module" src="/static/scripts/edit-player.js">

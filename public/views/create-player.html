@@ -12,15 +12,21 @@
 
 <body>
   <nav>
-    <h1 class="title-homepage">Tennis Analyis</h1>
   </nav>
-  <form action="" data-form="create-player-form">
-    <input name="first-name" type="text" placeholder="First Name">
-    <input name="last-name" type="text" placeholder="Last Name">
-    <button data-button="create-player-button">Create Player</button>
-  </form>
-  <div data-message="create-player-message">
-  </div>
+  <main class="create-main">
+    <div class="form-wrapper">
+      <h2>Create a new Player:</h2>
+      <form action="" data-form="create-player-form">
+        <div class="form-inputs">
+          <input name="first-name" type="text" placeholder="First Name">
+          <input name="last-name" type="text" placeholder="Last Name">
+        </div>
+        <button data-button="create-player-button">Create Player</button>
+      </form>
+      <div class="success-mess-button" data-message="create-player-message">
+      </div>
+    </div>
+  </main>
 </body>
 
 <script type="module" src="/static/scripts/create-player.js">

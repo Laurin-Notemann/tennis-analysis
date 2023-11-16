@@ -49,3 +49,14 @@ RETURNING *;
 SELECT *
 FROM teams
 WHERE user_id = $1;
+
+-- name: UpdateTeamById :one
+UPDATE teams
+SET 
+  player_one = $1,
+  player_two = $2,
+  name = $3,
+  updated_at = Now()
+WHERE id = $4
+RETURNING *;
+

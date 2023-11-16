@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"net/http"
 	"testing"
@@ -46,11 +45,8 @@ func TestCreatePlayer(t *testing.T) {
 			input: db.CreateNewTeamWithOnePlayerParams{
 				FirstName: "Oskar",
 				LastName:  "Kuech",
-				Name: sql.NullString{
-					String: "",
-					Valid:  false,
-				},
-				UserID: userId,
+				Name:      "Oskar Kuech",
+				UserID:    userId,
 			},
 		},
 		{
@@ -62,11 +58,8 @@ func TestCreatePlayer(t *testing.T) {
 			input: db.CreateNewTeamWithOnePlayerParams{
 				FirstName: "",
 				LastName:  "Kuech",
-				Name: sql.NullString{
-					String: "",
-					Valid:  false,
-				},
-				UserID: userId,
+				Name:      "",
+				UserID:    userId,
 			},
 		},
 		{
@@ -78,11 +71,8 @@ func TestCreatePlayer(t *testing.T) {
 			input: db.CreateNewTeamWithOnePlayerParams{
 				FirstName: "Oskar",
 				LastName:  "",
-				Name: sql.NullString{
-					String: "",
-					Valid:  false,
-				},
-				UserID: userId,
+				Name:      "",
+				UserID:    userId,
 			},
 		},
 		{
@@ -94,11 +84,8 @@ func TestCreatePlayer(t *testing.T) {
 			input: db.CreateNewTeamWithOnePlayerParams{
 				FirstName: "Oskar",
 				LastName:  "Kuech",
-				Name: sql.NullString{
-					String: "",
-					Valid:  false,
-				},
-				UserID: userId,
+				Name:      "",
+				UserID:    userId,
 			},
 		},
 		{
@@ -110,11 +97,8 @@ func TestCreatePlayer(t *testing.T) {
 			input: db.CreateNewTeamWithOnePlayerParams{
 				FirstName: "Oskar",
 				LastName:  "Test",
-				Name: sql.NullString{
-					String: "",
-					Valid:  false,
-				},
-				UserID: userId,
+				Name:      "",
+				UserID:    userId,
 			},
 		},
 		{
@@ -126,11 +110,8 @@ func TestCreatePlayer(t *testing.T) {
 			input: db.CreateNewTeamWithOnePlayerParams{
 				FirstName: "Laurin",
 				LastName:  "Test",
-				Name: sql.NullString{
-					String: "",
-					Valid:  false,
-				},
-				UserID: userId,
+				Name:      "",
+				UserID:    userId,
 			},
 		},
 	}
@@ -186,20 +167,14 @@ func TestGetAllPlayersByUserId(t *testing.T) {
 				{
 					FirstName: "Laurin",
 					LastName:  "Notemann",
-					Name: sql.NullString{
-						String: "",
-						Valid:  false,
-					},
-					UserID: userId,
+					Name:      "",
+					UserID:    userId,
 				},
 				{
 					FirstName: "Max",
 					LastName:  "Mustermann",
-					Name: sql.NullString{
-						String: "",
-						Valid:  false,
-					},
-					UserID: userId,
+					Name:      "",
+					UserID:    userId,
 				},
 			},
 			expectedLength: 2,
@@ -374,10 +349,17 @@ func DummyPlayer(t *testing.T, e *echo.Echo, userId uuid.UUID) db.Player {
 	seed := db.CreateNewTeamWithOnePlayerParams{
 		FirstName: "Laurin",
 		LastName:  "Notemann",
-		Name: sql.NullString{
-			String: "",
-			Valid:  false,
-		},
+		Name: "",
+		UserID: userId,
+	}
+	return addNewPlayer(t, e, seed)
+}
+
+func DummyPlayerTwo(t *testing.T, e *echo.Echo, userId uuid.UUID) db.Player {
+	seed := db.CreateNewTeamWithOnePlayerParams{
+		FirstName: "Oskar",
+		LastName:  "Kuech",
+		Name: "",
 		UserID: userId,
 	}
 	return addNewPlayer(t, e, seed)

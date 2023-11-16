@@ -30,8 +30,6 @@ editPlayerForm.addEventListener("submit", async e => {
     ID: playerId
   }
 
-  console.log(body)
-
   const res = await fetch("/api/players", {
     method: "PUT",
     body: JSON.stringify(body),
@@ -39,7 +37,7 @@ editPlayerForm.addEventListener("submit", async e => {
   })
 
   if (res.status == 200) {
-    addMessage(message, "Player was successfully updated")
+    addMessage(message, "Player was successfully updated", "Players", "/players")
     localStorage.setItem("player-first-name", data.get("first-name"))
     localStorage.setItem("player-last-name", data.get("last-name"))
   } else {

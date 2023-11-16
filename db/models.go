@@ -76,7 +76,7 @@ type Stat struct {
 
 type Team struct {
 	ID        uuid.UUID
-	Name      sql.NullString
+	Name      string
 	UserID    uuid.UUID
 	PlayerOne uuid.UUID
 	PlayerTwo *uuid.UUID

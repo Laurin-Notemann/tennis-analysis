@@ -19,6 +19,10 @@ func (d *DBQueriesMock) GetTeamById(ctx context.Context, id uuid.UUID) (db.Team,
 	return db.Team{}, nil
 }
 
+func (d *DBQueriesMock) UpdateTeamById(ctx context.Context, arg db.UpdateTeamByIdParams) (db.Team, error) {
+	return db.Team{}, nil
+}
+
 func (d *DBQueriesMock) DeleteTeamById(ctx context.Context, id uuid.UUID) (db.Team, error) {
 	return db.Team{}, nil
 }
