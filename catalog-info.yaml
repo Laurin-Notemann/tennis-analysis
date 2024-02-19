@@ -1,0 +1,12 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: tennis-analysis
+  annotations:
+    'backstage.io/kubernetes-id': tennis-analysis
+    'backstage.io/kubernetes-namespace': laurin
+spec:
+  type: service
+  owner: user:guest
+  lifecycle: experimental
+
