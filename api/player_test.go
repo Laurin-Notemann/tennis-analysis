@@ -349,8 +349,8 @@ func DummyPlayer(t *testing.T, e *echo.Echo, userId uuid.UUID) db.Player {
 	seed := db.CreateNewTeamWithOnePlayerParams{
 		FirstName: "Laurin",
 		LastName:  "Notemann",
-		Name: "",
-		UserID: userId,
+		Name:      "",
+		UserID:    userId,
 	}
 	return addNewPlayer(t, e, seed)
 }
@@ -359,8 +359,8 @@ func DummyPlayerTwo(t *testing.T, e *echo.Echo, userId uuid.UUID) db.Player {
 	seed := db.CreateNewTeamWithOnePlayerParams{
 		FirstName: "Oskar",
 		LastName:  "Kuech",
-		Name: "",
-		UserID: userId,
+		Name:      "",
+		UserID:    userId,
 	}
 	return addNewPlayer(t, e, seed)
 }
